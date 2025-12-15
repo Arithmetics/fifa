@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SetDisplayNameRouteImport } from './routes/set-display-name'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PicksStepRouteImport } from './routes/picks.$step'
 
 const SetDisplayNameRoute = SetDisplayNameRouteImport.update({
   id: '/set-display-name',
@@ -22,31 +23,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PicksStepRoute = PicksStepRouteImport.update({
+  id: '/picks/$step',
+  path: '/picks/$step',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/set-display-name': typeof SetDisplayNameRoute
+  '/picks/$step': typeof PicksStepRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/set-display-name': typeof SetDisplayNameRoute
+  '/picks/$step': typeof PicksStepRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/set-display-name': typeof SetDisplayNameRoute
+  '/picks/$step': typeof PicksStepRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/set-display-name'
+  fullPaths: '/' | '/set-display-name' | '/picks/$step'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/set-display-name'
-  id: '__root__' | '/' | '/set-display-name'
+  to: '/' | '/set-display-name' | '/picks/$step'
+  id: '__root__' | '/' | '/set-display-name' | '/picks/$step'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SetDisplayNameRoute: typeof SetDisplayNameRoute
+  PicksStepRoute: typeof PicksStepRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/picks/$step': {
+      id: '/picks/$step'
+      path: '/picks/$step'
+      fullPath: '/picks/$step'
+      preLoaderRoute: typeof PicksStepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SetDisplayNameRoute: SetDisplayNameRoute,
+  PicksStepRoute: PicksStepRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
