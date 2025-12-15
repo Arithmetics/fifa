@@ -20,7 +20,7 @@ function HomeComponent() {
   // Redirect logged in users to picks
   useEffect(() => {
     if (user) {
-      navigate({ to: "/picks/1" });
+      navigate({ to: "/picks/$step", params: { step: "1" } });
     }
   }, [user, navigate]);
 
