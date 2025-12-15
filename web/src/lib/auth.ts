@@ -7,15 +7,41 @@ export const authClient = createAuthClient({
     import.meta.env.VITE_AUTH_URL || `${window.location.origin}/api/auth`,
 });
 
+// Extend the user type to include displayName
+export type UserWithDisplayName = {
+  id: string;
+  email: string;
+  name: string;
+  image?: string | null;
+  emailVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  displayName?: string | null;
+};
+
+type SessionWithDisplayName = {
+  user: UserWithDisplayName;
+  session: {
+    id: string;
+    expiresAt: Date;
+    token: string;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+};
+
 export function useAuth() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: session } = useQuery({
+  const { data: session } = useQuery<SessionWithDisplayName | null>({
     queryKey: ["auth", "session"],
     queryFn: async () => {
       const { data } = await authClient.getSession();
-      return data;
+      return data as SessionWithDisplayName | null;
     },
   });
 
@@ -51,7 +77,9 @@ export function useAuth() {
       throw new Error("Failed to set display name");
     }
 
-    queryClient.invalidateQueries({ queryKey: ["auth"] });
+    // Don't optimistically update - just invalidate and let it refetch
+    // This prevents race conditions with navigation
+    queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
   };
 
   return {
