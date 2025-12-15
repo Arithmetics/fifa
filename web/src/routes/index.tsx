@@ -16,7 +16,7 @@ function HomeComponent() {
   const { user, signIn, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 relative">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative">
       {/* Logout button in top right */}
       {user && (
         <div className="absolute top-4 right-4">
@@ -28,7 +28,7 @@ function HomeComponent() {
       <div className="w-full max-w-2xl space-y-8 text-center">
         {/* Main Title */}
         <div className="space-y-4">
-          <h1 className="text-6xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-6xl md:text-7xl font-bold tracking-tight">
             🌍 World Cup 2026 ⚽
           </h1>
           <p className="text-xl text-muted-foreground">
@@ -38,7 +38,7 @@ function HomeComponent() {
 
         {/* Auth Card */}
         {user ? (
-          <Card className="shadow-lg">
+          <Card>
             <CardHeader>
               <CardDescription className="text-lg">
                 Welcome back,
@@ -49,7 +49,7 @@ function HomeComponent() {
             </CardHeader>
           </Card>
         ) : (
-          <Card className="shadow-lg">
+          <Card>
             <CardHeader>
               <h2 className="text-2xl font-semibold">Get Started</h2>
               <CardDescription>

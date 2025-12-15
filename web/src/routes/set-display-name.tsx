@@ -50,8 +50,8 @@ function SetDisplayNameComponent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="text-4xl mb-2">⚽</div>
           <CardTitle className="text-2xl">Welcome to World Cup 2026!</CardTitle>
