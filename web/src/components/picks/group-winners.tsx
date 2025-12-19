@@ -33,34 +33,53 @@ export function GroupWinnersComponent() {
             <CardTitle className="text-lg">Group {groupLetter}</CardTitle>
           </CardHeader>
           <CardContent>
-            <RadioGroup
-              value={selectedWinners[groupLetter] || ""}
-              onValueChange={(value) => handleGroupChange(groupLetter, value)}
-            >
-              <div className="space-y-2">
-                {countries.map((country) => (
-                  <div
-                    key={country.name}
-                    className="flex items-center space-x-2 space-y-0"
-                  >
-                    <RadioGroupItem
-                      value={country.name}
-                      id={`${groupLetter}-${country.name}`}
-                    />
-                    <Label
-                      htmlFor={`${groupLetter}-${country.name}`}
-                      className="flex items-center gap-2 cursor-pointer flex-1 text-sm"
-                    >
-                      <span className="text-xl">{country.flag}</span>
-                      <span className="font-medium">{country.name}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {country.points}
-                      </span>
-                    </Label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-end pb-1">
+                <div className="text-xs text-muted-foreground text-right">
+                  <div>points:</div>
+                  <div>
+                    <span className="text-purple-500">win group</span> /
                   </div>
-                ))}
+                  <div>
+                    <span className="text-yellow-500">qualify</span>
+                  </div>
+                </div>
               </div>
-            </RadioGroup>
+              <RadioGroup
+                value={selectedWinners[groupLetter] || ""}
+                onValueChange={(value) => handleGroupChange(groupLetter, value)}
+              >
+                <div className="space-y-2">
+                  {countries.map((country) => (
+                    <div
+                      key={country.name}
+                      className="flex items-center space-x-2 space-y-0"
+                    >
+                      <RadioGroupItem
+                        value={country.name}
+                        id={`${groupLetter}-${country.name}`}
+                      />
+                      <Label
+                        htmlFor={`${groupLetter}-${country.name}`}
+                        className="flex items-center gap-2 cursor-pointer flex-1 text-sm"
+                      >
+                        <span className="text-xl">{country.flag}</span>
+                        <span className="font-medium">{country.name}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          <span className="text-purple-500">
+                            {country.winGroupPoints}
+                          </span>
+                          /
+                          <span className="text-yellow-500">
+                            {country.qualifyPoints}
+                          </span>
+                        </span>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            </div>
           </CardContent>
         </Card>
       ))}

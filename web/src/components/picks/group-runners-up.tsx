@@ -75,51 +75,65 @@ export function GroupRunnersUpComponent() {
               )}
             </CardHeader>
             <CardContent>
-              <RadioGroup
-                value={selectedRunnersUp[groupLetter] || ""}
-                onValueChange={(value) =>
-                  handleRunnerUpChange(groupLetter, value)
-                }
-              >
-                <div className="space-y-2">
-                  {sortedCountries.map((country) => {
-                    const isGroupWinner = country.name === groupWinner;
-                    const isDisabled = isGroupWinner;
+              <div className="space-y-2">
+                <div className="flex items-center justify-end pb-1">
+                  <div className="text-xs text-muted-foreground text-right">
+                    <div>points:</div>
+                    <div>
+                      <span className="text-yellow-500">qualify</span>
+                    </div>
+                  </div>
+                </div>
+                <RadioGroup
+                  value={selectedRunnersUp[groupLetter] || ""}
+                  onValueChange={(value) =>
+                    handleRunnerUpChange(groupLetter, value)
+                  }
+                >
+                  <div className="space-y-2">
+                    {sortedCountries.map((country) => {
+                      const isGroupWinner = country.name === groupWinner;
+                      const isDisabled = isGroupWinner;
 
-                    return (
-                      <div
-                        key={country.name}
-                        className={`flex items-center space-x-2 space-y-0 ${
-                          isGroupWinner ? "opacity-50" : ""
-                        }`}
-                      >
-                        <RadioGroupItem
-                          value={country.name}
-                          id={`runner-${groupLetter}-${country.name}`}
-                          disabled={isDisabled}
-                        />
-                        <Label
-                          htmlFor={`runner-${groupLetter}-${country.name}`}
-                          className={`flex items-center gap-2 flex-1 text-sm ${
-                            isDisabled ? "cursor-not-allowed" : "cursor-pointer"
+                      return (
+                        <div
+                          key={country.name}
+                          className={`flex items-center space-x-2 space-y-0 ${
+                            isGroupWinner ? "opacity-50" : ""
                           }`}
                         >
-                          <span className="text-xl">{country.flag}</span>
-                          <span className="font-medium">{country.name}</span>
-                          {isGroupWinner && (
-                            <span className="text-xs text-muted-foreground">
-                              (Winner)
+                          <RadioGroupItem
+                            value={country.name}
+                            id={`runner-${groupLetter}-${country.name}`}
+                            disabled={isDisabled}
+                          />
+                          <Label
+                            htmlFor={`runner-${groupLetter}-${country.name}`}
+                            className={`flex items-center gap-2 flex-1 text-sm ${
+                              isDisabled
+                                ? "cursor-not-allowed"
+                                : "cursor-pointer"
+                            }`}
+                          >
+                            <span className="text-xl">{country.flag}</span>
+                            <span className="font-medium">{country.name}</span>
+                            {isGroupWinner && (
+                              <span className="text-xs text-muted-foreground">
+                                (Winner)
+                              </span>
+                            )}
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              <span className="text-yellow-500">
+                                {country.qualifyPoints}
+                              </span>
                             </span>
-                          )}
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {country.points}
-                          </span>
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </RadioGroup>
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </RadioGroup>
+              </div>
             </CardContent>
           </Card>
         );
@@ -127,4 +141,3 @@ export function GroupRunnersUpComponent() {
     </div>
   );
 }
-

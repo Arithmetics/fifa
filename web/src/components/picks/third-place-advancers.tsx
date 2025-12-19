@@ -138,6 +138,14 @@ export function ThirdPlaceAdvancersComponent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
+                <div className="flex items-center justify-end pb-1">
+                  <div className="text-xs text-muted-foreground text-right">
+                    <div>points:</div>
+                    <div>
+                      <span className="text-yellow-500">qualify</span>
+                    </div>
+                  </div>
+                </div>
                 {sortedCountries.map((country) => {
                   const isSelected = groupAdvancer === country.name;
                   const isDisabled = hasReachedMax && !isSelected;
@@ -168,7 +176,9 @@ export function ThirdPlaceAdvancersComponent() {
                         <span className="text-xl">{country.flag}</span>
                         <span className="font-medium">{country.name}</span>
                         <span className="ml-auto text-xs text-muted-foreground">
-                          {country.points}
+                          <span className="text-yellow-500">
+                            {country.qualifyPoints}
+                          </span>
                         </span>
                       </Label>
                     </div>
