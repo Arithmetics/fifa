@@ -1,16 +1,12 @@
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   GROUPS,
   THIRD_PLACE_STORAGE_KEY,
+  GROUP_WINNERS_STORAGE_KEY,
+  GROUP_RUNNERS_UP_STORAGE_KEY,
   type ThirdPlaceAdvancersState,
   type GroupWinnersState,
   type GroupRunnersUpState,
@@ -23,37 +19,17 @@ export function ThirdPlaceAdvancersComponent() {
       return stored ? JSON.parse(stored) : {};
     });
 
-  // Sample data for group winners (in reality this will come from the database)
-  const groupWinners: GroupWinnersState = {
-    A: GROUPS.A[0].name,
-    B: GROUPS.B[0].name,
-    C: GROUPS.C[0].name,
-    D: GROUPS.D[0].name,
-    E: GROUPS.E[0].name,
-    F: GROUPS.F[0].name,
-    G: GROUPS.G[0].name,
-    H: GROUPS.H[0].name,
-    I: GROUPS.I[0].name,
-    J: GROUPS.J[0].name,
-    K: GROUPS.K[0].name,
-    L: GROUPS.L[0].name,
-  };
+  // Get group winners from localStorage
+  const groupWinners: GroupWinnersState = (() => {
+    const stored = localStorage.getItem(GROUP_WINNERS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  })();
 
-  // Sample data for group runners up (in reality this will come from the database)
-  const groupRunnersUp: GroupRunnersUpState = {
-    A: GROUPS.A[1]?.name || "",
-    B: GROUPS.B[1]?.name || "",
-    C: GROUPS.C[1]?.name || "",
-    D: GROUPS.D[1]?.name || "",
-    E: GROUPS.E[1]?.name || "",
-    F: GROUPS.F[1]?.name || "",
-    G: GROUPS.G[1]?.name || "",
-    H: GROUPS.H[1]?.name || "",
-    I: GROUPS.I[1]?.name || "",
-    J: GROUPS.J[1]?.name || "",
-    K: GROUPS.K[1]?.name || "",
-    L: GROUPS.L[1]?.name || "",
-  };
+  // Get group runners up from localStorage
+  const groupRunnersUp: GroupRunnersUpState = (() => {
+    const stored = localStorage.getItem(GROUP_RUNNERS_UP_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  })();
 
   const handleAdvancerToggle = (
     groupLetter: string,
@@ -101,14 +77,13 @@ export function ThirdPlaceAdvancersComponent() {
         const groupRunnerUp = groupRunnersUp[groupLetter];
         const groupAdvancer = selectedAdvancers[groupLetter]?.[0];
 
-        // Filter out winner and runner up - they're not eligible
-        const eligibleCountries = countries.filter(
-          (country) =>
-            country.name !== groupWinner && country.name !== groupRunnerUp
-        );
-
-        // Sort: selected advancer first (if any), then others
-        const sortedCountries = [...eligibleCountries].sort((a, b) => {
+        // Include all countries, but mark winner and runner-up as disabled
+        // Sort: winner first, runner-up second, selected advancer third, then others
+        const sortedCountries = [...countries].sort((a, b) => {
+          if (a.name === groupWinner) return -1;
+          if (b.name === groupWinner) return 1;
+          if (a.name === groupRunnerUp) return -1;
+          if (b.name === groupRunnerUp) return 1;
           if (a.name === groupAdvancer) return -1;
           if (b.name === groupAdvancer) return 1;
           return 0;
@@ -118,23 +93,6 @@ export function ThirdPlaceAdvancersComponent() {
           <Card key={groupLetter}>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Group {groupLetter}</CardTitle>
-              <CardDescription className="text-xs">
-                {groupWinner && (
-                  <>
-                    Winner:{" "}
-                    {countries.find((c) => c.name === groupWinner)?.flag}{" "}
-                    {groupWinner}
-                    {groupRunnerUp && " • "}
-                  </>
-                )}
-                {groupRunnerUp && (
-                  <>
-                    Runner Up:{" "}
-                    {countries.find((c) => c.name === groupRunnerUp)?.flag}{" "}
-                    {groupRunnerUp}
-                  </>
-                )}
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -148,12 +106,19 @@ export function ThirdPlaceAdvancersComponent() {
                 </div>
                 {sortedCountries.map((country) => {
                   const isSelected = groupAdvancer === country.name;
-                  const isDisabled = hasReachedMax && !isSelected;
+                  const isGroupWinner = country.name === groupWinner;
+                  const isGroupRunnerUp = country.name === groupRunnerUp;
+                  const isDisabled =
+                    isGroupWinner ||
+                    isGroupRunnerUp ||
+                    (hasReachedMax && !isSelected);
 
                   return (
                     <div
                       key={country.name}
-                      className="flex items-center space-x-2 space-y-0"
+                      className={`flex items-center space-x-2 space-y-0 ${
+                        isGroupWinner || isGroupRunnerUp ? "opacity-50" : ""
+                      }`}
                     >
                       <Checkbox
                         id={`third-${groupLetter}-${country.name}`}
@@ -175,6 +140,16 @@ export function ThirdPlaceAdvancersComponent() {
                       >
                         <span className="text-xl">{country.flag}</span>
                         <span className="font-medium">{country.name}</span>
+                        {isGroupWinner && (
+                          <span className="text-xs text-muted-foreground">
+                            (Winner)
+                          </span>
+                        )}
+                        {isGroupRunnerUp && (
+                          <span className="text-xs text-muted-foreground">
+                            (Runner Up)
+                          </span>
+                        )}
                         <span className="ml-auto text-xs text-muted-foreground">
                           <span className="text-yellow-500">
                             {country.qualifyPoints}
