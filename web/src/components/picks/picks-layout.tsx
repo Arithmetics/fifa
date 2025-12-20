@@ -24,6 +24,12 @@ import {
   THIRD_PLACE_STORAGE_KEY,
 } from "@/lib/picks-data";
 
+const ROUND_OF_32_STORAGE_KEY = "fifa_round_of_32_winners";
+const ROUND_OF_16_STORAGE_KEY = "fifa_round_of_16_winners";
+const QUARTERFINALS_STORAGE_KEY = "fifa_quarterfinals_winners";
+const SEMIFINALS_STORAGE_KEY = "fifa_semifinals_winners";
+const CHAMPIONSHIP_STORAGE_KEY = "fifa_championship_winner";
+
 type PicksLayoutProps = {
   slug: string;
   children: ReactNode;
@@ -81,6 +87,66 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           current: totalSelected,
           total: currentStep.progressTotal || 8,
           label: currentStep.progressLabel || "Third Place Advancers Selected",
+        });
+      } else if (currentStep.progressKey === "round-of-32") {
+        // Round of 32: count selected teams / 16
+        const stored = localStorage.getItem(ROUND_OF_32_STORAGE_KEY);
+        const selectedTeams = stored ? JSON.parse(stored) : [];
+        const selectedCount = Array.isArray(selectedTeams)
+          ? selectedTeams.length
+          : 0;
+        setStepProgress({
+          current: selectedCount,
+          total: currentStep.progressTotal || 16,
+          label: currentStep.progressLabel || "Teams Selected",
+        });
+      } else if (currentStep.progressKey === "round-of-16") {
+        // Round of 16: count selected teams / 8
+        const stored = localStorage.getItem(ROUND_OF_16_STORAGE_KEY);
+        const selectedTeams = stored ? JSON.parse(stored) : [];
+        const selectedCount = Array.isArray(selectedTeams)
+          ? selectedTeams.length
+          : 0;
+        setStepProgress({
+          current: selectedCount,
+          total: currentStep.progressTotal || 8,
+          label: currentStep.progressLabel || "Teams Selected",
+        });
+      } else if (currentStep.progressKey === "quarterfinals") {
+        // Quarterfinals: count selected teams / 4
+        const stored = localStorage.getItem(QUARTERFINALS_STORAGE_KEY);
+        const selectedTeams = stored ? JSON.parse(stored) : [];
+        const selectedCount = Array.isArray(selectedTeams)
+          ? selectedTeams.length
+          : 0;
+        setStepProgress({
+          current: selectedCount,
+          total: currentStep.progressTotal || 4,
+          label: currentStep.progressLabel || "Teams Selected",
+        });
+      } else if (currentStep.progressKey === "semifinals") {
+        // Semifinals: count selected teams / 2
+        const stored = localStorage.getItem(SEMIFINALS_STORAGE_KEY);
+        const selectedTeams = stored ? JSON.parse(stored) : [];
+        const selectedCount = Array.isArray(selectedTeams)
+          ? selectedTeams.length
+          : 0;
+        setStepProgress({
+          current: selectedCount,
+          total: currentStep.progressTotal || 2,
+          label: currentStep.progressLabel || "Teams Selected",
+        });
+      } else if (currentStep.progressKey === "championship") {
+        // Championship: count selected teams / 1
+        const stored = localStorage.getItem(CHAMPIONSHIP_STORAGE_KEY);
+        const selectedTeams = stored ? JSON.parse(stored) : [];
+        const selectedCount = Array.isArray(selectedTeams)
+          ? selectedTeams.length
+          : 0;
+        setStepProgress({
+          current: selectedCount,
+          total: currentStep.progressTotal || 1,
+          label: currentStep.progressLabel || "Team Selected",
         });
       } else {
         setStepProgress(null);
@@ -185,9 +251,9 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">{currentStep.name}</CardTitle>
-              <CardDescription>
-                Make your picks for this stage of the tournament
-              </CardDescription>
+              {currentStep.description && (
+                <CardDescription>{currentStep.description}</CardDescription>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">{children}</CardContent>
           </Card>
@@ -208,7 +274,15 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
                   {stepProgress.current} / {stepProgress.total}
                 </span>
               </div>
-              <Progress value={stepProgressValue} />
+              <div
+                className={
+                  stepProgress.current === stepProgress.total
+                    ? "[&_[class*='bg-primary']]:!bg-green-500"
+                    : ""
+                }
+              >
+                <Progress value={stepProgressValue} />
+              </div>
             </div>
           )}
 
