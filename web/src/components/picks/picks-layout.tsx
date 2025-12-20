@@ -29,6 +29,7 @@ const ROUND_OF_16_STORAGE_KEY = "fifa_round_of_16_winners";
 const QUARTERFINALS_STORAGE_KEY = "fifa_quarterfinals_winners";
 const SEMIFINALS_STORAGE_KEY = "fifa_semifinals_winners";
 const CHAMPIONSHIP_STORAGE_KEY = "fifa_championship_winner";
+const PLAYER_PICKS_STORAGE_KEY = "fifa_player_picks";
 
 type PicksLayoutProps = {
   slug: string;
@@ -147,6 +148,17 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           current: selectedCount,
           total: currentStep.progressTotal || 1,
           label: currentStep.progressLabel || "Team Selected",
+        });
+      } else if (currentStep.progressKey === "player-picks") {
+        // Player Picks: count selected awards / 3
+        const stored = localStorage.getItem(PLAYER_PICKS_STORAGE_KEY);
+        const selectedPicks = stored ? JSON.parse(stored) : {};
+        const selectedCount =
+          Object.values(selectedPicks).filter(Boolean).length;
+        setStepProgress({
+          current: selectedCount,
+          total: currentStep.progressTotal || 3,
+          label: currentStep.progressLabel || "Awards Selected",
         });
       } else {
         setStepProgress(null);

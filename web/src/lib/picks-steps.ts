@@ -85,6 +85,9 @@ export const STEPS: StepConfig[] = [
     name: "Player Picks",
     description:
       "Pick the player you think will win the listed awards. You will get the listed number of points if they win the award.",
+    progressKey: "player-picks",
+    progressTotal: 4,
+    progressLabel: "Awards Selected",
   },
 ];
 
