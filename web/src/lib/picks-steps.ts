@@ -89,6 +89,11 @@ export const STEPS: StepConfig[] = [
     progressTotal: 4,
     progressLabel: "Awards Selected",
   },
+  {
+    slug: "summary",
+    name: "Summary",
+    description: "",
+  },
 ];
 
 export function getStepBySlug(slug: string): StepConfig | undefined {

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SetDisplayNameRouteImport } from './routes/set-display-name'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PicksThirdPlaceAdvancersRouteImport } from './routes/picks/third-place-advancers'
+import { Route as PicksSummaryRouteImport } from './routes/picks/summary'
 import { Route as PicksSemifinalsRouteImport } from './routes/picks/semifinals'
 import { Route as PicksRoundOf32RouteImport } from './routes/picks/round-of-32'
 import { Route as PicksRoundOf16RouteImport } from './routes/picks/round-of-16'
@@ -37,6 +38,11 @@ const PicksThirdPlaceAdvancersRoute =
     path: '/picks/third-place-advancers',
     getParentRoute: () => rootRouteImport,
   } as any)
+const PicksSummaryRoute = PicksSummaryRouteImport.update({
+  id: '/picks/summary',
+  path: '/picks/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PicksSemifinalsRoute = PicksSemifinalsRouteImport.update({
   id: '/picks/semifinals',
   path: '/picks/semifinals',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/picks/round-of-16': typeof PicksRoundOf16Route
   '/picks/round-of-32': typeof PicksRoundOf32Route
   '/picks/semifinals': typeof PicksSemifinalsRoute
+  '/picks/summary': typeof PicksSummaryRoute
   '/picks/third-place-advancers': typeof PicksThirdPlaceAdvancersRoute
 }
 export interface FileRoutesByTo {
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/picks/round-of-16': typeof PicksRoundOf16Route
   '/picks/round-of-32': typeof PicksRoundOf32Route
   '/picks/semifinals': typeof PicksSemifinalsRoute
+  '/picks/summary': typeof PicksSummaryRoute
   '/picks/third-place-advancers': typeof PicksThirdPlaceAdvancersRoute
 }
 export interface FileRoutesById {
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/picks/round-of-16': typeof PicksRoundOf16Route
   '/picks/round-of-32': typeof PicksRoundOf32Route
   '/picks/semifinals': typeof PicksSemifinalsRoute
+  '/picks/summary': typeof PicksSummaryRoute
   '/picks/third-place-advancers': typeof PicksThirdPlaceAdvancersRoute
 }
 export interface FileRouteTypes {
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/picks/round-of-16'
     | '/picks/round-of-32'
     | '/picks/semifinals'
+    | '/picks/summary'
     | '/picks/third-place-advancers'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/picks/round-of-16'
     | '/picks/round-of-32'
     | '/picks/semifinals'
+    | '/picks/summary'
     | '/picks/third-place-advancers'
   id:
     | '__root__'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/picks/round-of-16'
     | '/picks/round-of-32'
     | '/picks/semifinals'
+    | '/picks/summary'
     | '/picks/third-place-advancers'
   fileRoutesById: FileRoutesById
 }
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   PicksRoundOf16Route: typeof PicksRoundOf16Route
   PicksRoundOf32Route: typeof PicksRoundOf32Route
   PicksSemifinalsRoute: typeof PicksSemifinalsRoute
+  PicksSummaryRoute: typeof PicksSummaryRoute
   PicksThirdPlaceAdvancersRoute: typeof PicksThirdPlaceAdvancersRoute
 }
 
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/picks/third-place-advancers'
       fullPath: '/picks/third-place-advancers'
       preLoaderRoute: typeof PicksThirdPlaceAdvancersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/picks/summary': {
+      id: '/picks/summary'
+      path: '/picks/summary'
+      fullPath: '/picks/summary'
+      preLoaderRoute: typeof PicksSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/picks/semifinals': {
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   PicksRoundOf16Route: PicksRoundOf16Route,
   PicksRoundOf32Route: PicksRoundOf32Route,
   PicksSemifinalsRoute: PicksSemifinalsRoute,
+  PicksSummaryRoute: PicksSummaryRoute,
   PicksThirdPlaceAdvancersRoute: PicksThirdPlaceAdvancersRoute,
 }
 export const routeTree = rootRouteImport

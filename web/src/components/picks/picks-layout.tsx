@@ -150,14 +150,14 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           label: currentStep.progressLabel || "Team Selected",
         });
       } else if (currentStep.progressKey === "player-picks") {
-        // Player Picks: count selected awards / 3
+        // Player Picks: count selected awards / 4
         const stored = localStorage.getItem(PLAYER_PICKS_STORAGE_KEY);
         const selectedPicks = stored ? JSON.parse(stored) : {};
         const selectedCount =
           Object.values(selectedPicks).filter(Boolean).length;
         setStepProgress({
           current: selectedCount,
-          total: currentStep.progressTotal || 3,
+          total: currentStep.progressTotal || 4,
           label: currentStep.progressLabel || "Awards Selected",
         });
       } else {
@@ -219,6 +219,7 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
         semifinals: "/picks/semifinals",
         championship: "/picks/championship",
         "player-picks": "/picks/player-picks",
+        summary: "/picks/summary",
       };
       const route = routeMap[previousStep.slug];
       if (route) {
@@ -239,6 +240,7 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
         semifinals: "/picks/semifinals",
         championship: "/picks/championship",
         "player-picks": "/picks/player-picks",
+        summary: "/picks/summary",
       };
       const route = routeMap[nextStep.slug];
       if (route) {
@@ -249,7 +251,7 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="flex-1 p-4 pb-32">
+      <div className={`flex-1 p-4 ${slug !== "summary" ? "pb-32" : ""}`}>
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header with Title and Logout */}
           <div className="flex items-center justify-between">
@@ -273,59 +275,67 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
       </div>
 
       {/* Sticky Footer with Progress and Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
-        <div className="max-w-4xl mx-auto p-4 space-y-4">
-          {/* Step Progress Bar */}
-          {stepProgress && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {stepProgress.label}
-                </span>
-                <span className="font-medium">
-                  {stepProgress.current} / {stepProgress.total}
-                </span>
+      {slug !== "summary" && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
+          <div className="max-w-4xl mx-auto p-4 space-y-4">
+            {/* Step Progress Bar */}
+            {stepProgress && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {stepProgress.label}
+                  </span>
+                  <span className="font-medium">
+                    {stepProgress.current} / {stepProgress.total}
+                  </span>
+                </div>
+                <div
+                  className={
+                    stepProgress.current === stepProgress.total
+                      ? "[&_[class*='bg-primary']]:!bg-green-500"
+                      : ""
+                  }
+                >
+                  <Progress value={stepProgressValue} />
+                </div>
               </div>
-              <div
-                className={
-                  stepProgress.current === stepProgress.total
-                    ? "[&_[class*='bg-primary']]:!bg-green-500"
-                    : ""
-                }
+            )}
+
+            {/* Step Indicator and Navigation */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={!previousStep}
               >
-                <Progress value={stepProgressValue} />
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Previous
+              </Button>
+
+              <span className="text-sm text-muted-foreground">
+                Step {stepIndex + 1} of {STEPS.length}
+              </span>
+
+              <div className="flex gap-2">
+                {nextStep && nextStep.slug !== "summary" ? (
+                  <Button onClick={handleNext}>
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      navigate({ to: "/picks/summary" as any });
+                    }}
+                  >
+                    Submit Picks
+                  </Button>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Step Indicator and Navigation */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={!previousStep}
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Previous
-            </Button>
-
-            <span className="text-sm text-muted-foreground">
-              Step {stepIndex + 1} of {STEPS.length}
-            </span>
-
-            <div className="flex gap-2">
-              {nextStep ? (
-                <Button onClick={handleNext}>
-                  Next
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button>Submit Picks</Button>
-              )}
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
