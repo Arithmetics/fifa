@@ -113,3 +113,24 @@ export function getNextStep(currentSlug: string): StepConfig | null {
   const index = getStepIndex(currentSlug);
   return index < STEPS.length - 1 ? STEPS[index + 1] : null;
 }
+
+/**
+ * Get the previous round slug for playoff rounds
+ * For round-of-32, returns an array of slugs: ["group-winners", "group-runners-up", "third-place-advancers"]
+ * For other rounds, returns the previous playoff round slug
+ */
+export function getPreviousRoundSlugs(currentSlug: string): string[] {
+  if (currentSlug === "round-of-32") {
+    return ["group-winners", "group-runners-up", "third-place-advancers"];
+  }
+
+  const playoffRoundMap: Record<string, string> = {
+    "round-of-16": "round-of-32",
+    quarterfinals: "round-of-16",
+    semifinals: "quarterfinals",
+    championship: "semifinals",
+  };
+
+  const prevSlug = playoffRoundMap[currentSlug];
+  return prevSlug ? [prevSlug] : [];
+}

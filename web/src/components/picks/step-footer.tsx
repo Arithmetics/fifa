@@ -62,12 +62,9 @@ export function StepFooter({
   const handleNext = async () => {
     if (!nextStep) return;
 
-    if (!isValid) {
-      return;
-    }
-
     try {
       await onSubmit();
+      // Only navigate if submission succeeded
       const routeMap: Record<string, string> = {
         "group-winners": "/picks/group-winners",
         "group-runners-up": "/picks/group-runners-up",
@@ -83,9 +80,12 @@ export function StepFooter({
       const route = routeMap[nextStep.slug];
       if (route) {
         navigate({ to: route as any });
+        // Scroll to top after navigation
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (err) {
-      // Error handling is done by the component
+      // Error handling is done by the component (it sets error state and scrolls to top)
+      // Don't navigate on error
     }
   };
 
@@ -134,10 +134,7 @@ export function StepFooter({
 
             <div className="flex gap-2">
               {nextStep && nextStep.slug !== "summary" ? (
-                <Button
-                  onClick={handleNext}
-                  disabled={isSubmitting || !isValid}
-                >
+                <Button onClick={handleNext} disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : "Next"}
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>

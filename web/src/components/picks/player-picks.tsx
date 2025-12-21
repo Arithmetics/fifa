@@ -91,8 +91,10 @@ export function PlayerPicksComponent() {
 
   const handleSubmit = async () => {
     if (!isValid) {
-      setError("Please select a player for all 4 awards");
-      throw new Error("Please select a player for all 4 awards");
+      const errorMessage = "Please select a player for all 4 awards";
+      setError(errorMessage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      throw new Error(errorMessage);
     }
 
     setError(null);
@@ -117,6 +119,7 @@ export function PlayerPicksComponent() {
       const message =
         err instanceof Error ? err.message : "Failed to submit bets";
       setError(message);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       throw err;
     } finally {
       setIsSubmitting(false);
@@ -142,15 +145,10 @@ export function PlayerPicksComponent() {
 
   return (
     <>
-      <div className="space-y-4 pb-32">
+      <div className="space-y-4 pb-32" id="player-picks-content-top">
         {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             {error}
-          </div>
-        )}
-        {!isValid && (
-          <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-400">
-            Please select a player for all 4 awards ({progressCount}/4)
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

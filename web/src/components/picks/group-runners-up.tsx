@@ -74,8 +74,10 @@ export function GroupRunnersUpComponent() {
 
   const handleSubmit = async () => {
     if (!isValid) {
-      setError("Please select a runner-up for all 12 groups");
-      throw new Error("Please select a runner-up for all 12 groups");
+      const errorMessage = "Please select a runner-up for all 12 groups";
+      setError(errorMessage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      throw new Error(errorMessage);
     }
 
     const choiceIds = Object.values(selectedChoices);
@@ -88,6 +90,7 @@ export function GroupRunnersUpComponent() {
       const message =
         err instanceof Error ? err.message : "Failed to submit bets";
       setError(message);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       throw err;
     } finally {
       setIsSubmitting(false);
@@ -100,15 +103,10 @@ export function GroupRunnersUpComponent() {
 
   return (
     <>
-      <div className="space-y-4 pb-32">
+      <div className="space-y-4 pb-32" id="group-runners-up-content-top">
         {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             {error}
-          </div>
-        )}
-        {!isValid && (
-          <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-400">
-            Please select a runner-up for all 12 groups ({progress}/12)
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
