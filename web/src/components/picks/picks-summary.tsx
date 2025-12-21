@@ -8,6 +8,9 @@ import type {
   GroupRunnersUpState,
   ThirdPlaceAdvancersState,
 } from "@/lib/picks-data";
+import { getPreviousRoundSlugs } from "@/lib/picks-steps";
+import { createMatchupsFromTeams } from "@/lib/playoff-matchups";
+import type { Team } from "@/components/picks/bracket-view";
 
 export function PicksSummary() {
   const { data: betsData } = useBets();
@@ -171,6 +174,100 @@ export function PicksSummary() {
     };
   }, [betsData, linesData]);
 
+  // Helper to get previous round choices for bracket rounds
+  const getPreviousRoundChoices = useMemo(() => {
+    if (!betsData || !linesData) {
+      return () =>
+        [] as Array<{
+          id: string;
+          title: string;
+          flag: string | null;
+          primaryPoints: number;
+          secondaryPoints: number;
+        }>;
+    }
+    const bets = betsData.bets;
+    const lines = linesData.lines;
+
+    // Map round title to slug
+    const roundTitleToSlug: Record<string, string> = {
+      "Round of 32": "round-of-32",
+      "Round of 16": "round-of-16",
+      Quarterfinals: "quarterfinals",
+      Semifinals: "semifinals",
+      Championship: "championship",
+    };
+
+    return (roundTitle: string) => {
+      const slug = roundTitleToSlug[roundTitle];
+      if (!slug) return [];
+
+      const previousSlugs = getPreviousRoundSlugs(slug);
+      if (previousSlugs.length === 0) return [];
+
+      const previousChoices: Array<{
+        id: string;
+        title: string;
+        flag: string | null;
+        primaryPoints: number;
+        secondaryPoints: number;
+      }> = [];
+
+      previousSlugs.forEach((prevSlug) => {
+        if (prevSlug === "group-winners") {
+          // Get all group winners
+          bets
+            .filter((bet) =>
+              bet.choice.line.collection.includes("group-winner")
+            )
+            .forEach((bet) => {
+              previousChoices.push(bet.choice);
+            });
+        } else if (prevSlug === "group-runners-up") {
+          // Get all group runners-up
+          bets
+            .filter((bet) =>
+              bet.choice.line.collection.includes("group-runner-up")
+            )
+            .forEach((bet) => {
+              previousChoices.push(bet.choice);
+            });
+        } else if (prevSlug === "third-place-advancers") {
+          // Get all third place advancers
+          bets
+            .filter((bet) =>
+              bet.choice.line.collection.includes("group-third-place")
+            )
+            .forEach((bet) => {
+              previousChoices.push(bet.choice);
+            });
+        } else {
+          // For other playoff rounds, find the line by slug
+          const prevRoundTitleMap: Record<string, string> = {
+            "round-of-32": "Round of 32",
+            "round-of-16": "Round of 16",
+            quarterfinals: "Quarterfinals",
+            semifinals: "Semifinals",
+            championship: "Championship",
+          };
+          const prevRoundTitle = prevRoundTitleMap[prevSlug];
+          if (prevRoundTitle) {
+            const prevLine = lines.find((l) => l.title === prevRoundTitle);
+            if (prevLine) {
+              bets
+                .filter((bet) => bet.choice.lineId === prevLine.id)
+                .forEach((bet) => {
+                  previousChoices.push(bet.choice);
+                });
+            }
+          }
+        }
+      });
+
+      return previousChoices;
+    };
+  }, [betsData, linesData]);
+
   // Helper to get advancing teams for a group
   const getAdvancingTeams = (groupLetter: string) => {
     const winner = groupWinners[groupLetter];
@@ -201,25 +298,72 @@ export function PicksSummary() {
           <CardContent>
             <div className="space-y-2">
               {(() => {
-                const choices = getRoundChoices("Championship");
-                return choices.length > 0 ? (
-                  choices.map((choice) => (
-                    <div
-                      key={choice.id}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className="text-lg">{choice.flag}</span>
-                      <span>{choice.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({choice.primaryPoints} pts)
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No picks yet
-                  </span>
+                const currentChoices = getRoundChoices("Championship");
+                const previousChoices = getPreviousRoundChoices("Championship");
+                const currentTeamNames = new Set(
+                  currentChoices.map((c) => c.title)
                 );
+
+                if (previousChoices.length === 0) {
+                  return (
+                    <span className="text-sm text-muted-foreground">
+                      No picks yet
+                    </span>
+                  );
+                }
+
+                // Create teams from previous choices
+                const teams: Team[] = previousChoices.map((choice) => ({
+                  id: choice.id,
+                  name: choice.title,
+                  flag: choice.flag || "",
+                  points: choice.primaryPoints,
+                }));
+
+                const matchups = createMatchupsFromTeams(teams);
+
+                return matchups.map((matchup) => (
+                  <div
+                    key={matchup.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    {matchup.team1 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team1.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team1.flag}</span>
+                        <span>{matchup.team1.name}</span>
+                        {currentTeamNames.has(matchup.team1.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team1.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <span className="text-muted-foreground">vs</span>
+                    {matchup.team2 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team2.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team2.flag}</span>
+                        <span>{matchup.team2.name}</span>
+                        {currentTeamNames.has(matchup.team2.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team2.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ));
               })()}
             </div>
           </CardContent>
@@ -233,25 +377,72 @@ export function PicksSummary() {
           <CardContent>
             <div className="space-y-2">
               {(() => {
-                const choices = getRoundChoices("Semifinals");
-                return choices.length > 0 ? (
-                  choices.map((choice) => (
-                    <div
-                      key={choice.id}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className="text-lg">{choice.flag}</span>
-                      <span>{choice.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({choice.secondaryPoints} pts)
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No picks yet
-                  </span>
+                const currentChoices = getRoundChoices("Semifinals");
+                const previousChoices = getPreviousRoundChoices("Semifinals");
+                const currentTeamNames = new Set(
+                  currentChoices.map((c) => c.title)
                 );
+
+                if (previousChoices.length === 0) {
+                  return (
+                    <span className="text-sm text-muted-foreground">
+                      No picks yet
+                    </span>
+                  );
+                }
+
+                // Create teams from previous choices
+                const teams: Team[] = previousChoices.map((choice) => ({
+                  id: choice.id,
+                  name: choice.title,
+                  flag: choice.flag || "",
+                  points: choice.secondaryPoints,
+                }));
+
+                const matchups = createMatchupsFromTeams(teams);
+
+                return matchups.map((matchup) => (
+                  <div
+                    key={matchup.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    {matchup.team1 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team1.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team1.flag}</span>
+                        <span>{matchup.team1.name}</span>
+                        {currentTeamNames.has(matchup.team1.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team1.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <span className="text-muted-foreground">vs</span>
+                    {matchup.team2 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team2.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team2.flag}</span>
+                        <span>{matchup.team2.name}</span>
+                        {currentTeamNames.has(matchup.team2.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team2.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ));
               })()}
             </div>
           </CardContent>
@@ -265,25 +456,73 @@ export function PicksSummary() {
           <CardContent>
             <div className="space-y-2">
               {(() => {
-                const choices = getRoundChoices("Quarterfinals");
-                return choices.length > 0 ? (
-                  choices.map((choice) => (
-                    <div
-                      key={choice.id}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className="text-lg">{choice.flag}</span>
-                      <span>{choice.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({choice.secondaryPoints} pts)
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No picks yet
-                  </span>
+                const currentChoices = getRoundChoices("Quarterfinals");
+                const previousChoices =
+                  getPreviousRoundChoices("Quarterfinals");
+                const currentTeamNames = new Set(
+                  currentChoices.map((c) => c.title)
                 );
+
+                if (previousChoices.length === 0) {
+                  return (
+                    <span className="text-sm text-muted-foreground">
+                      No picks yet
+                    </span>
+                  );
+                }
+
+                // Create teams from previous choices
+                const teams: Team[] = previousChoices.map((choice) => ({
+                  id: choice.id,
+                  name: choice.title,
+                  flag: choice.flag || "",
+                  points: choice.secondaryPoints,
+                }));
+
+                const matchups = createMatchupsFromTeams(teams);
+
+                return matchups.map((matchup) => (
+                  <div
+                    key={matchup.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    {matchup.team1 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team1.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team1.flag}</span>
+                        <span>{matchup.team1.name}</span>
+                        {currentTeamNames.has(matchup.team1.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team1.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <span className="text-muted-foreground">vs</span>
+                    {matchup.team2 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team2.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team2.flag}</span>
+                        <span>{matchup.team2.name}</span>
+                        {currentTeamNames.has(matchup.team2.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team2.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ));
               })()}
             </div>
           </CardContent>
@@ -297,61 +536,158 @@ export function PicksSummary() {
           <CardContent>
             <div className="space-y-2">
               {(() => {
-                const choices = getRoundChoices("Round of 16");
-                return choices.length > 0 ? (
-                  choices.map((choice) => (
-                    <div
-                      key={choice.id}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className="text-lg">{choice.flag}</span>
-                      <span>{choice.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({choice.secondaryPoints} pts)
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No picks yet
-                  </span>
+                const currentChoices = getRoundChoices("Round of 16");
+                const previousChoices = getPreviousRoundChoices("Round of 16");
+                const currentTeamNames = new Set(
+                  currentChoices.map((c) => c.title)
                 );
+
+                if (previousChoices.length === 0) {
+                  return (
+                    <span className="text-sm text-muted-foreground">
+                      No picks yet
+                    </span>
+                  );
+                }
+
+                // Create teams from previous choices
+                const teams: Team[] = previousChoices.map((choice) => ({
+                  id: choice.id,
+                  name: choice.title,
+                  flag: choice.flag || "",
+                  points: choice.secondaryPoints,
+                }));
+
+                const matchups = createMatchupsFromTeams(teams);
+
+                return matchups.map((matchup) => (
+                  <div
+                    key={matchup.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    {matchup.team1 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team1.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team1.flag}</span>
+                        <span>{matchup.team1.name}</span>
+                        {currentTeamNames.has(matchup.team1.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team1.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <span className="text-muted-foreground">vs</span>
+                    {matchup.team2 && (
+                      <div
+                        className={`flex items-center gap-1 ${
+                          !currentTeamNames.has(matchup.team2.name)
+                            ? "text-muted-foreground line-through opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{matchup.team2.flag}</span>
+                        <span>{matchup.team2.name}</span>
+                        {currentTeamNames.has(matchup.team2.name) && (
+                          <span className="text-xs text-muted-foreground">
+                            ({matchup.team2.points} pts)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ));
               })()}
             </div>
           </CardContent>
         </Card>
 
-        {/* Round of 32 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Round of 32</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(() => {
-                const choices = getRoundChoices("Round of 32");
-                return choices.length > 0 ? (
-                  choices.map((choice) => (
+        {/* Round of 32 - More columns since it has many matchups */}
+        <div className="col-span-full">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Round of 32</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {(() => {
+                  const currentChoices = getRoundChoices("Round of 32");
+                  const previousChoices =
+                    getPreviousRoundChoices("Round of 32");
+                  const currentTeamNames = new Set(
+                    currentChoices.map((c) => c.title)
+                  );
+
+                  if (previousChoices.length === 0) {
+                    return (
+                      <span className="text-sm text-muted-foreground">
+                        No picks yet
+                      </span>
+                    );
+                  }
+
+                  // Create teams from previous choices
+                  const teams: Team[] = previousChoices.map((choice) => ({
+                    id: choice.id,
+                    name: choice.title,
+                    flag: choice.flag || "",
+                    points: choice.secondaryPoints,
+                  }));
+
+                  const matchups = createMatchupsFromTeams(teams);
+
+                  return matchups.map((matchup) => (
                     <div
-                      key={choice.id}
+                      key={matchup.id}
                       className="flex items-center gap-2 text-sm"
                     >
-                      <span className="text-lg">{choice.flag}</span>
-                      <span>{choice.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({choice.secondaryPoints} pts)
-                      </span>
+                      {matchup.team1 && (
+                        <div
+                          className={`flex items-center gap-1 ${
+                            !currentTeamNames.has(matchup.team1.name)
+                              ? "text-muted-foreground line-through opacity-60"
+                              : ""
+                          }`}
+                        >
+                          <span className="text-lg">{matchup.team1.flag}</span>
+                          <span>{matchup.team1.name}</span>
+                          {currentTeamNames.has(matchup.team1.name) && (
+                            <span className="text-xs text-muted-foreground">
+                              ({matchup.team1.points} pts)
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <span className="text-muted-foreground">vs</span>
+                      {matchup.team2 && (
+                        <div
+                          className={`flex items-center gap-1 ${
+                            !currentTeamNames.has(matchup.team2.name)
+                              ? "text-muted-foreground line-through opacity-60"
+                              : ""
+                          }`}
+                        >
+                          <span className="text-lg">{matchup.team2.flag}</span>
+                          <span>{matchup.team2.name}</span>
+                          {currentTeamNames.has(matchup.team2.name) && (
+                            <span className="text-xs text-muted-foreground">
+                              ({matchup.team2.points} pts)
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No picks yet
-                  </span>
-                );
-              })()}
-            </div>
-          </CardContent>
-        </Card>
+                  ));
+                })()}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Player Awards Summary */}
@@ -406,7 +742,7 @@ export function PicksSummary() {
           <CardTitle>Group Stage</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {Object.entries(GROUPS).map(([groupLetter, countries]) => {
               const { winner, runnerUp, thirdPlace } =
                 getAdvancingTeams(groupLetter);
@@ -420,19 +756,29 @@ export function PicksSummary() {
               };
 
               // Get points for each country
-              const getPoints = (countryName: string): number | null => {
+              const getPoints = (
+                countryName: string
+              ): {
+                primary: number | null;
+                secondary: number | null;
+              } => {
+                const country = countries.find((c) => c.name === countryName);
                 if (countryName === winner) {
-                  const country = countries.find((c) => c.name === countryName);
-                  return country?.winGroupPoints ?? null;
+                  return {
+                    primary: country?.winGroupPoints ?? null,
+                    secondary: country?.qualifyPoints ?? null,
+                  };
                 }
                 if (
                   countryName === runnerUp ||
                   thirdPlace.includes(countryName)
                 ) {
-                  const country = countries.find((c) => c.name === countryName);
-                  return country?.qualifyPoints ?? null;
+                  return {
+                    primary: country?.qualifyPoints ?? null,
+                    secondary: null,
+                  };
                 }
-                return null;
+                return { primary: null, secondary: null };
               };
 
               // Sort countries by standing
@@ -467,9 +813,12 @@ export function PicksSummary() {
                           <span className="truncate flex-1">
                             {country.name}
                           </span>
-                          {points !== null && (
+                          {points.primary !== null && (
                             <span className="text-xs text-muted-foreground">
-                              {points}
+                              {points.secondary !== null
+                                ? `${points.primary} / ${points.secondary}`
+                                : points.primary}{" "}
+                              pts
                             </span>
                           )}
                         </div>
