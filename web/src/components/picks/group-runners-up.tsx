@@ -1,10 +1,4 @@
-import {
-  useState,
-  useMemo,
-  useEffect,
-  useImperativeHandle,
-  forwardRef,
-} from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -14,128 +8,99 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useLinesByCollection, type Line } from "@/lib/lines";
+import { useLinesByCollection, type Choice } from "@/lib/lines";
 import { useBetsByCollection, useSubmitBets } from "@/lib/bets";
+import { StepFooter } from "./step-footer";
 
-export type GroupRunnersUpHandle = {
-  submit: () => Promise<void>;
-  isValid: () => boolean;
-};
+export function GroupRunnersUpComponent() {
+  const { data: lines } = useLinesByCollection("group-runner-up");
+  const { data: bets } = useBetsByCollection("group-runner-up");
+  const { data: winnerBets } = useBetsByCollection("group-winner");
+  const submitBets = useSubmitBets();
 
-export const GroupRunnersUpComponent = forwardRef<GroupRunnersUpHandle>(
-  function GroupRunnersUpComponent(_, ref) {
-    const { data: lines, isLoading } = useLinesByCollection("group-runner-up");
-    const { data: bets } = useBetsByCollection("group-runner-up");
-    const { data: winnerBets } = useBetsByCollection("group-winner");
-    const submitBets = useSubmitBets();
+  // Initialize state from bets on first render
+  const [selectedChoices, setSelectedChoices] = useState<
+    Record<string, string>
+  >(() => {
+    if (!bets) return {};
+    const initial: Record<string, string> = {};
+    bets.forEach((bet) => {
+      const match = bet.choice.line.title.match(/Group ([A-L]) Runner Up/);
+      if (match) {
+        initial[match[1]] = bet.choice.id;
+      }
+    });
+    return initial;
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Map from group letter to selected choice ID
-    const [selectedChoices, setSelectedChoices] = useState<Map<string, string>>(
-      new Map()
-    );
+  // Get group winners from bets
+  const groupWinners: Record<string, string> = {};
+  if (winnerBets) {
+    winnerBets.forEach((bet) => {
+      const match = bet.choice.line.title.match(/Group ([A-L]) Winner/);
+      if (match) {
+        groupWinners[match[1]] = bet.choice.title;
+      }
+    });
+  }
 
-    // Error state
-    const [error, setError] = useState<string | null>(null);
+  // Create lines by group
+  const linesByGroup: Record<string, NonNullable<typeof lines>[0]> = {};
+  if (lines) {
+    lines.forEach((line) => {
+      const match = line.title.match(/Group ([A-L]) Runner Up/);
+      if (match) {
+        linesByGroup[match[1]] = line;
+      }
+    });
+  }
 
-    // Get group winners from bets (map group letter to country name)
-    const groupWinners = useMemo(() => {
-      if (!winnerBets) return new Map<string, string>();
+  const sortedGroups = Object.entries(linesByGroup).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
 
-      const winners = new Map<string, string>();
-      winnerBets.forEach((bet) => {
-        const choice = bet.choice;
-        const match = bet.choice.line.title.match(/Group ([A-L]) Winner/);
-        if (match) {
-          winners.set(match[1], choice.title);
-        }
-      });
-      return winners;
-    }, [winnerBets]);
+  const progress = Object.keys(selectedChoices).length;
+  const isValid = progress === 12;
 
-    // Load existing bets into state
-    useEffect(() => {
-      if (!bets || !lines) return;
+  const handleRunnerUpChange = (groupLetter: string, choiceId: string) => {
+    setSelectedChoices((prev) => ({
+      ...prev,
+      [groupLetter]: choiceId,
+    }));
+    setError(null);
+  };
 
-      const newSelected = new Map<string, string>();
-      bets.forEach((bet) => {
-        const choice = bet.choice;
-        const match = choice.line.title.match(/Group ([A-L]) Runner Up/);
-        if (match) {
-          newSelected.set(match[1], choice.id);
-        }
-      });
-      setSelectedChoices(newSelected);
-    }, [bets, lines]);
-
-    // Create a map of group letter to line
-    const linesByGroup = useMemo(() => {
-      if (!lines) return new Map<string, Line>();
-      const map = new Map<string, Line>();
-      lines.forEach((line) => {
-        // Extract group letter from "Group A Runner Up" -> "A"
-        const match = line.title.match(/Group ([A-L]) Runner Up/);
-        if (match) {
-          map.set(match[1], line);
-        }
-      });
-      return map;
-    }, [lines]);
-
-    // Validation: must have exactly 12 selections (one per group)
-    const isValid = useMemo(() => {
-      return selectedChoices.size === 12;
-    }, [selectedChoices]);
-
-    // Expose submit and isValid to parent
-    useImperativeHandle(
-      ref,
-      () => ({
-        submit: async () => {
-          if (!isValid) {
-            throw new Error("Please select a runner-up for all 12 groups");
-          }
-
-          const choiceIds = Array.from(selectedChoices.values());
-          setError(null);
-
-          try {
-            await submitBets.mutateAsync({ choiceIds });
-          } catch (err) {
-            const message =
-              err instanceof Error ? err.message : "Failed to submit bets";
-            setError(message);
-            throw err;
-          }
-        },
-        isValid: () => isValid,
-      }),
-      [isValid, selectedChoices, submitBets]
-    );
-
-    const handleRunnerUpChange = (groupLetter: string, choiceId: string) => {
-      const newSelected = new Map(selectedChoices);
-      newSelected.set(groupLetter, choiceId);
-      setSelectedChoices(newSelected);
-      setError(null);
-    };
-
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading group data...</div>
-        </div>
-      );
+  const handleSubmit = async () => {
+    if (!isValid) {
+      setError("Please select a runner-up for all 12 groups");
+      throw new Error("Please select a runner-up for all 12 groups");
     }
 
-    // Sort groups alphabetically
-    const sortedGroups = useMemo(() => {
-      return Array.from(linesByGroup.entries()).sort(([a], [b]) =>
-        a.localeCompare(b)
-      );
-    }, [linesByGroup]);
+    const choiceIds = Object.values(selectedChoices);
+    setError(null);
+    setIsSubmitting(true);
 
-    return (
-      <div className="space-y-4">
+    try {
+      await submitBets.mutateAsync({ choiceIds });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to submit bets";
+      setError(message);
+      throw err;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!lines) {
+    return null;
+  }
+
+  return (
+    <>
+      <div className="space-y-4 pb-32">
         {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             {error}
@@ -143,14 +108,13 @@ export const GroupRunnersUpComponent = forwardRef<GroupRunnersUpHandle>(
         )}
         {!isValid && (
           <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-400">
-            Please select a runner-up for all 12 groups ({selectedChoices.size}
-            /12)
+            Please select a runner-up for all 12 groups ({progress}/12)
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedGroups.map(([groupLetter, line]) => {
-            const groupWinner = groupWinners.get(groupLetter);
-            const selectedChoiceId = selectedChoices.get(groupLetter);
+            const groupWinner = groupWinners[groupLetter];
+            const selectedChoiceId = selectedChoices[groupLetter];
 
             // Sort: group winner first, then others
             const sortedChoices = [...line.choices].sort((a, b) => {
@@ -166,7 +130,11 @@ export const GroupRunnersUpComponent = forwardRef<GroupRunnersUpHandle>(
                   {groupWinner && (
                     <CardDescription className="text-xs">
                       Winner:{" "}
-                      {line.choices.find((c) => c.title === groupWinner)?.flag}{" "}
+                      {
+                        line.choices.find(
+                          (c: Choice) => c.title === groupWinner
+                        )?.flag
+                      }{" "}
                       {groupWinner}
                     </CardDescription>
                   )}
@@ -188,7 +156,7 @@ export const GroupRunnersUpComponent = forwardRef<GroupRunnersUpHandle>(
                       }
                     >
                       <div className="space-y-2">
-                        {sortedChoices.map((choice) => {
+                        {sortedChoices.map((choice: Choice) => {
                           const isGroupWinner = choice.title === groupWinner;
                           const isDisabled = isGroupWinner;
 
@@ -239,6 +207,16 @@ export const GroupRunnersUpComponent = forwardRef<GroupRunnersUpHandle>(
           })}
         </div>
       </div>
-    );
-  }
-);
+      <StepFooter
+        slug="group-runners-up"
+        progress={progress}
+        progressTotal={12}
+        progressLabel="Group Runners Up Selected"
+        isValid={isValid}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        error={error}
+      />
+    </>
+  );
+}

@@ -148,6 +148,29 @@ export function PicksSummary() {
 
   const { groupWinners, groupRunnersUp, thirdPlaceAdvancers } = picks;
 
+  // Helper to get selected choices for a round from bets
+  const getRoundChoices = useMemo(() => {
+    if (!betsData || !linesData) {
+      return () =>
+        [] as Array<{
+          id: string;
+          title: string;
+          flag: string | null;
+          primaryPoints: number;
+          secondaryPoints: number;
+        }>;
+    }
+    const bets = betsData.bets;
+    const lines = linesData.lines;
+    return (roundTitle: string) => {
+      const line = lines.find((l) => l.title === roundTitle);
+      if (!line) return [];
+      return bets
+        .filter((bet) => bet.choice.lineId === line.id)
+        .map((bet) => bet.choice);
+    };
+  }, [betsData, linesData]);
+
   // Helper to get advancing teams for a group
   const getAdvancingTeams = (groupLetter: string) => {
     const winner = groupWinners[groupLetter];
@@ -164,16 +187,6 @@ export function PicksSummary() {
       countryName === runnerUp ||
       thirdPlace.includes(countryName)
     );
-  };
-
-  // Helper to get selected choices for a round from bets
-  const getRoundChoices = (roundTitle: string) => {
-    if (!betsData || !linesData) return [];
-    const line = linesData.lines.find((l) => l.title === roundTitle);
-    if (!line) return [];
-    return betsData.bets
-      .filter((bet) => bet.choice.lineId === line.id)
-      .map((bet) => bet.choice);
   };
 
   return (
