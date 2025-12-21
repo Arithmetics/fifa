@@ -112,18 +112,11 @@ export function BracketView({
                             {matchup.team1?.name || "TBD"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {matchup.team1?.points !== undefined && (
-                            <span className="text-xs text-muted-foreground">
-                              {matchup.team1.points} pts
-                            </span>
-                          )}
-                          {isTeam1Selected && (
-                            <span className="text-primary font-bold text-sm">
-                              ✓
-                            </span>
-                          )}
-                        </div>
+                        {matchup.team1?.points !== undefined && (
+                          <span className="text-xs text-muted-foreground">
+                            {matchup.team1.points} pts
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-muted-foreground text-xs px-1">
@@ -155,18 +148,11 @@ export function BracketView({
                             {matchup.team2?.name || "TBD"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {matchup.team2?.points !== undefined && (
-                            <span className="text-xs text-muted-foreground">
-                              {matchup.team2.points} pts
-                            </span>
-                          )}
-                          {isTeam2Selected && (
-                            <span className="text-primary font-bold text-sm">
-                              ✓
-                            </span>
-                          )}
-                        </div>
+                        {matchup.team2?.points !== undefined && (
+                          <span className="text-xs text-muted-foreground">
+                            {matchup.team2.points} pts
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

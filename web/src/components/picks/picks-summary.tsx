@@ -472,9 +472,6 @@ export function PicksSummary() {
                               {points}
                             </span>
                           )}
-                          {advances && (
-                            <span className="text-primary text-xs">✓</span>
-                          )}
                         </div>
                       );
                     })}

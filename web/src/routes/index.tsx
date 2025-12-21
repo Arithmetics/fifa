@@ -8,6 +8,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { useEffect } from "react";
+import { useBets } from "@/lib/bets";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
@@ -16,13 +17,19 @@ export const Route = createFileRoute("/")({
 function HomeComponent() {
   const { user, signIn, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: betsData } = useBets();
 
-  // Redirect logged in users to picks
+  // Redirect logged in users to picks or summary if they have bets
   useEffect(() => {
-    if (user) {
-      navigate({ to: "/picks/group-winners" });
+    if (user && betsData !== undefined) {
+      const hasBets = betsData?.bets && betsData.bets.length > 0;
+      if (hasBets) {
+        navigate({ to: "/picks/summary" });
+      } else {
+        navigate({ to: "/picks/group-winners" });
+      }
     }
-  }, [user, navigate]);
+  }, [user, betsData, navigate]);
 
   // Show login page if not logged in
   if (user) {
