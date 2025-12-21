@@ -23,6 +23,7 @@ model User {
 
   sessions Session[]
   accounts Account[]
+  bets     Bet[]
 
   @@map("user")
 }
@@ -73,4 +74,48 @@ model Verification {
 
   @@unique([identifier, value])
   @@map("verification")
+}
+
+model Line {
+  id                    String   @id @default(cuid())
+  title                 String
+  choiceLimit           Int
+  collection            String[]
+  choiceCollectionLimit Int?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  choices Choice[]
+
+  @@map("line")
+}
+
+model Choice {
+  id              String   @id @default(cuid())
+  lineId          String
+  title           String
+  flag            String?
+  primaryPoints   Int
+  secondaryPoints Int
+  isPrimaryWin    Boolean
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  line Line  @relation(fields: [lineId], references: [id], onDelete: Cascade)
+  bets Bet[]
+
+  @@map("choice")
+}
+
+model Bet {
+  id        String   @id @default(cuid())
+  choiceId  String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  choice Choice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bet")
 }

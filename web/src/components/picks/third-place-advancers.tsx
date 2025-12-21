@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
-  GROUPS,
   THIRD_PLACE_STORAGE_KEY,
   GROUP_WINNERS_STORAGE_KEY,
   GROUP_RUNNERS_UP_STORAGE_KEY,
@@ -11,8 +10,10 @@ import {
   type GroupWinnersState,
   type GroupRunnersUpState,
 } from "@/lib/picks-data";
+import { useLinesByCollection, type Line } from "@/lib/lines";
 
 export function ThirdPlaceAdvancersComponent() {
+  const { data: lines, isLoading } = useLinesByCollection("group-third-place");
   const [selectedAdvancers, setSelectedAdvancers] =
     useState<ThirdPlaceAdvancersState>(() => {
       const stored = localStorage.getItem(THIRD_PLACE_STORAGE_KEY);
@@ -30,6 +31,25 @@ export function ThirdPlaceAdvancersComponent() {
     const stored = localStorage.getItem(GROUP_RUNNERS_UP_STORAGE_KEY);
     return stored ? JSON.parse(stored) : {};
   })();
+
+  // Create a map of group letter to line
+  const linesByGroup = useMemo(() => {
+    if (!lines) return new Map<string, Line>();
+    const map = new Map<string, Line>();
+    lines.forEach((line) => {
+      // Extract group letter from "Group A Third Place" -> "A"
+      const match = line.title.match(/Group ([A-L]) Third Place/);
+      if (match) {
+        map.set(match[1], line);
+      }
+    });
+    return map;
+  }, [lines]);
+
+  // Get collection limit (total across all groups)
+  const maxAdvancers = useMemo(() => {
+    return lines?.[0]?.choiceCollectionLimit || 8;
+  }, [lines]);
 
   const handleAdvancerToggle = (
     groupLetter: string,
@@ -65,27 +85,40 @@ export function ThirdPlaceAdvancersComponent() {
 
   // Calculate total selected
   const totalSelected = Object.values(selectedAdvancers).flat().length;
-  const maxAdvancers = 8;
 
   // Check if we've reached the max
   const hasReachedMax = totalSelected >= maxAdvancers;
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Loading group data...</div>
+      </div>
+    );
+  }
+
+  // Sort groups alphabetically
+  const sortedGroups = useMemo(() => {
+    return Array.from(linesByGroup.entries()).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+  }, [linesByGroup]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {Object.entries(GROUPS).map(([groupLetter, countries]) => {
+      {sortedGroups.map(([groupLetter, line]) => {
         const groupWinner = groupWinners[groupLetter];
         const groupRunnerUp = groupRunnersUp[groupLetter];
         const groupAdvancer = selectedAdvancers[groupLetter]?.[0];
 
-        // Include all countries, but mark winner and runner-up as disabled
         // Sort: winner first, runner-up second, selected advancer third, then others
-        const sortedCountries = [...countries].sort((a, b) => {
-          if (a.name === groupWinner) return -1;
-          if (b.name === groupWinner) return 1;
-          if (a.name === groupRunnerUp) return -1;
-          if (b.name === groupRunnerUp) return 1;
-          if (a.name === groupAdvancer) return -1;
-          if (b.name === groupAdvancer) return 1;
+        const sortedChoices = [...line.choices].sort((a, b) => {
+          if (a.title === groupWinner) return -1;
+          if (b.title === groupWinner) return 1;
+          if (a.title === groupRunnerUp) return -1;
+          if (b.title === groupRunnerUp) return 1;
+          if (a.title === groupAdvancer) return -1;
+          if (b.title === groupAdvancer) return 1;
           return 0;
         });
 
@@ -104,10 +137,10 @@ export function ThirdPlaceAdvancersComponent() {
                     </div>
                   </div>
                 </div>
-                {sortedCountries.map((country) => {
-                  const isSelected = groupAdvancer === country.name;
-                  const isGroupWinner = country.name === groupWinner;
-                  const isGroupRunnerUp = country.name === groupRunnerUp;
+                {sortedChoices.map((choice) => {
+                  const isSelected = groupAdvancer === choice.title;
+                  const isGroupWinner = choice.title === groupWinner;
+                  const isGroupRunnerUp = choice.title === groupRunnerUp;
                   const isDisabled =
                     isGroupWinner ||
                     isGroupRunnerUp ||
@@ -115,31 +148,31 @@ export function ThirdPlaceAdvancersComponent() {
 
                   return (
                     <div
-                      key={country.name}
+                      key={choice.id}
                       className={`flex items-center space-x-2 space-y-0 ${
                         isGroupWinner || isGroupRunnerUp ? "opacity-50" : ""
                       }`}
                     >
                       <Checkbox
-                        id={`third-${groupLetter}-${country.name}`}
+                        id={`third-${groupLetter}-${choice.id}`}
                         checked={isSelected}
                         disabled={isDisabled}
                         onCheckedChange={(checked) =>
                           handleAdvancerToggle(
                             groupLetter,
-                            country.name,
+                            choice.title,
                             checked === true
                           )
                         }
                       />
                       <Label
-                        htmlFor={`third-${groupLetter}-${country.name}`}
+                        htmlFor={`third-${groupLetter}-${choice.id}`}
                         className={`flex items-center gap-2 flex-1 text-sm ${
                           isDisabled ? "cursor-not-allowed" : "cursor-pointer"
                         }`}
                       >
-                        <span className="text-xl">{country.flag}</span>
-                        <span className="font-medium">{country.name}</span>
+                        <span className="text-xl">{choice.flag}</span>
+                        <span className="font-medium">{choice.title}</span>
                         {isGroupWinner && (
                           <span className="text-xs text-muted-foreground">
                             (Winner)
@@ -152,7 +185,7 @@ export function ThirdPlaceAdvancersComponent() {
                         )}
                         <span className="ml-auto text-xs text-muted-foreground">
                           <span className="text-yellow-500">
-                            {country.qualifyPoints}
+                            {choice.secondaryPoints}
                           </span>
                         </span>
                       </Label>

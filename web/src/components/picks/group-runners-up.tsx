@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -9,35 +9,40 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
-  GROUPS,
   GROUP_RUNNERS_UP_STORAGE_KEY,
+  GROUP_WINNERS_STORAGE_KEY,
   type GroupRunnersUpState,
   type GroupWinnersState,
 } from "@/lib/picks-data";
+import { useLinesByCollection, type Line } from "@/lib/lines";
 
 export function GroupRunnersUpComponent() {
+  const { data: lines, isLoading } = useLinesByCollection("group-runner-up");
   const [selectedRunnersUp, setSelectedRunnersUp] =
     useState<GroupRunnersUpState>(() => {
       const stored = localStorage.getItem(GROUP_RUNNERS_UP_STORAGE_KEY);
       return stored ? JSON.parse(stored) : {};
     });
 
-  // Sample data for group winners (in reality this will come from the database)
-  // Using the first team from each group as sample winners
-  const groupWinners: GroupWinnersState = {
-    A: GROUPS.A[0].name, // Brazil
-    B: GROUPS.B[0].name, // Germany
-    C: GROUPS.C[0].name, // Netherlands
-    D: GROUPS.D[0].name, // Mexico
-    E: GROUPS.E[0].name, // Senegal
-    F: GROUPS.F[0].name, // Colombia
-    G: GROUPS.G[0].name, // Denmark
-    H: GROUPS.H[0].name, // Poland
-    I: GROUPS.I[0].name, // Australia
-    J: GROUPS.J[0].name, // Nigeria
-    K: GROUPS.K[0].name, // Algeria
-    L: GROUPS.L[0].name, // Czech Republic
-  };
+  // Get group winners from localStorage
+  const groupWinners: GroupWinnersState = (() => {
+    const stored = localStorage.getItem(GROUP_WINNERS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  })();
+
+  // Create a map of group letter to line
+  const linesByGroup = useMemo(() => {
+    if (!lines) return new Map<string, Line>();
+    const map = new Map<string, Line>();
+    lines.forEach((line) => {
+      // Extract group letter from "Group A Runner Up" -> "A"
+      const match = line.title.match(/Group ([A-L]) Runner Up/);
+      if (match) {
+        map.set(match[1], line);
+      }
+    });
+    return map;
+  }, [lines]);
 
   const handleRunnerUpChange = (groupLetter: string, countryName: string) => {
     const newState = {
@@ -51,15 +56,30 @@ export function GroupRunnersUpComponent() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Loading group data...</div>
+      </div>
+    );
+  }
+
+  // Sort groups alphabetically
+  const sortedGroups = useMemo(() => {
+    return Array.from(linesByGroup.entries()).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+  }, [linesByGroup]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {Object.entries(GROUPS).map(([groupLetter, countries]) => {
+      {sortedGroups.map(([groupLetter, line]) => {
         const groupWinner = groupWinners[groupLetter];
 
         // Sort: group winner first, then others
-        const sortedCountries = [...countries].sort((a, b) => {
-          if (a.name === groupWinner) return -1;
-          if (b.name === groupWinner) return 1;
+        const sortedChoices = [...line.choices].sort((a, b) => {
+          if (a.title === groupWinner) return -1;
+          if (b.title === groupWinner) return 1;
           return 0;
         });
 
@@ -69,7 +89,8 @@ export function GroupRunnersUpComponent() {
               <CardTitle className="text-lg">Group {groupLetter}</CardTitle>
               {groupWinner && (
                 <CardDescription className="text-xs">
-                  Winner: {countries.find((c) => c.name === groupWinner)?.flag}{" "}
+                  Winner:{" "}
+                  {line.choices.find((c) => c.title === groupWinner)?.flag}{" "}
                   {groupWinner}
                 </CardDescription>
               )}
@@ -91,32 +112,32 @@ export function GroupRunnersUpComponent() {
                   }
                 >
                   <div className="space-y-2">
-                    {sortedCountries.map((country) => {
-                      const isGroupWinner = country.name === groupWinner;
+                    {sortedChoices.map((choice) => {
+                      const isGroupWinner = choice.title === groupWinner;
                       const isDisabled = isGroupWinner;
 
                       return (
                         <div
-                          key={country.name}
+                          key={choice.id}
                           className={`flex items-center space-x-2 space-y-0 ${
                             isGroupWinner ? "opacity-50" : ""
                           }`}
                         >
                           <RadioGroupItem
-                            value={country.name}
-                            id={`runner-${groupLetter}-${country.name}`}
+                            value={choice.title}
+                            id={`runner-${groupLetter}-${choice.id}`}
                             disabled={isDisabled}
                           />
                           <Label
-                            htmlFor={`runner-${groupLetter}-${country.name}`}
+                            htmlFor={`runner-${groupLetter}-${choice.id}`}
                             className={`flex items-center gap-2 flex-1 text-sm ${
                               isDisabled
                                 ? "cursor-not-allowed"
                                 : "cursor-pointer"
                             }`}
                           >
-                            <span className="text-xl">{country.flag}</span>
-                            <span className="font-medium">{country.name}</span>
+                            <span className="text-xl">{choice.flag}</span>
+                            <span className="font-medium">{choice.title}</span>
                             {isGroupWinner && (
                               <span className="text-xs text-muted-foreground">
                                 (Winner)
@@ -124,7 +145,7 @@ export function GroupRunnersUpComponent() {
                             )}
                             <span className="ml-auto text-xs text-muted-foreground">
                               <span className="text-yellow-500">
-                                {country.qualifyPoints}
+                                {choice.secondaryPoints}
                               </span>
                             </span>
                           </Label>

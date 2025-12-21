@@ -5,13 +5,8 @@ import {
   type Matchup,
   type Team,
 } from "@/components/picks/bracket-view";
-import { useState, useEffect } from "react";
-
-// Fake data for 2 teams that advanced from semifinals
-const FAKE_CHAMPIONSHIP_TEAMS: Team[] = [
-  { id: "champ-1", name: "Brazil", flag: "🇧🇷", points: 50 },
-  { id: "champ-2", name: "Argentina", flag: "🇦🇷", points: 45 },
-];
+import { useState, useEffect, useMemo } from "react";
+import { useLineByStepSlug } from "@/lib/lines";
 
 const CHAMPIONSHIP_STORAGE_KEY = "fifa_championship_winner";
 
@@ -20,6 +15,7 @@ export const Route = createFileRoute("/picks/championship")({
 });
 
 function ChampionshipPage() {
+  const { data: line, isLoading, error } = useLineByStepSlug("championship");
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
   // Load saved selections from localStorage
@@ -35,23 +31,33 @@ function ChampionshipPage() {
     }
   }, []);
 
-  // Create single matchup for championship
-  const matchups: Matchup[] = [
-    {
-      id: "championship",
-      team1: FAKE_CHAMPIONSHIP_TEAMS[0],
-      team2: FAKE_CHAMPIONSHIP_TEAMS[1],
-    },
-  ];
+  // Convert choices to teams and create single matchup for championship
+  const matchups: Matchup[] = useMemo(() => {
+    if (!line?.choices || line.choices.length < 2) return [];
+
+    const teams: Team[] = line.choices.map((choice) => ({
+      id: choice.id,
+      name: choice.title,
+      flag: choice.flag || "",
+      points: choice.primaryPoints, // Championship uses primaryPoints
+    }));
+
+    return [
+      {
+        id: "championship",
+        team1: teams[0] || null,
+        team2: teams[1] || null,
+      },
+    ];
+  }, [line]);
 
   const handleTeamSelect = (team: Team) => {
     const newSelected = new Set(selectedTeams);
     if (newSelected.has(team.id)) {
-      // Deselect if already selected
       newSelected.delete(team.id);
     } else {
-      // Only allow selection if under max (1)
-      if (newSelected.size < 1) {
+      const maxSelections = line?.choiceLimit || 1;
+      if (newSelected.size < maxSelections) {
         newSelected.add(team.id);
       }
     }
@@ -62,13 +68,35 @@ function ChampionshipPage() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <PicksLayout slug="championship">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading teams...</div>
+        </div>
+      </PicksLayout>
+    );
+  }
+
+  if (error || !line) {
+    return (
+      <PicksLayout slug="championship">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-destructive">
+            {error ? "Error loading teams" : "No teams available"}
+          </div>
+        </div>
+      </PicksLayout>
+    );
+  }
+
   return (
     <PicksLayout slug="championship">
       <BracketView
         matchups={matchups}
         onTeamSelect={handleTeamSelect}
         selectedTeams={selectedTeams}
-        maxSelections={1}
+        maxSelections={line.choiceLimit}
       />
     </PicksLayout>
   );

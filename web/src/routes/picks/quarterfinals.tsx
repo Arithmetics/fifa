@@ -5,19 +5,8 @@ import {
   type Matchup,
   type Team,
 } from "@/components/picks/bracket-view";
-import { useState, useEffect } from "react";
-
-// Fake data for 8 teams that advanced from round of 16
-const FAKE_QUARTERFINALS_TEAMS: Team[] = [
-  { id: "qf-1", name: "Brazil", flag: "🇧🇷", points: 25 },
-  { id: "qf-2", name: "Argentina", flag: "🇦🇷", points: 24 },
-  { id: "qf-3", name: "France", flag: "🇫🇷", points: 23 },
-  { id: "qf-4", name: "Spain", flag: "🇪🇸", points: 22 },
-  { id: "qf-5", name: "Germany", flag: "🇩🇪", points: 21 },
-  { id: "qf-6", name: "Italy", flag: "🇮🇹", points: 20 },
-  { id: "qf-7", name: "Portugal", flag: "🇵🇹", points: 19 },
-  { id: "qf-8", name: "England", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", points: 18 },
-];
+import { useState, useEffect, useMemo } from "react";
+import { useLineByStepSlug } from "@/lib/lines";
 
 const QUARTERFINALS_STORAGE_KEY = "fifa_quarterfinals_winners";
 
@@ -26,6 +15,7 @@ export const Route = createFileRoute("/picks/quarterfinals")({
 });
 
 function QuarterfinalsPage() {
+  const { data: line, isLoading, error } = useLineByStepSlug("quarterfinals");
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
   // Load saved selections from localStorage
@@ -41,24 +31,37 @@ function QuarterfinalsPage() {
     }
   }, []);
 
-  // Create matchups: pair teams 1-4 with teams 5-8
-  const matchups: Matchup[] = [];
-  for (let i = 0; i < 4; i++) {
-    matchups.push({
-      id: `match-${i + 1}`,
-      team1: FAKE_QUARTERFINALS_TEAMS[i],
-      team2: FAKE_QUARTERFINALS_TEAMS[i + 4],
-    });
-  }
+  // Convert choices to teams and create matchups
+  const matchups: Matchup[] = useMemo(() => {
+    if (!line?.choices) return [];
+
+    const teams: Team[] = line.choices.map((choice) => ({
+      id: choice.id,
+      name: choice.title,
+      flag: choice.flag || "",
+      points: choice.secondaryPoints,
+    }));
+
+    // Create matchups: pair teams 1-4 with teams 5-8
+    const matchupList: Matchup[] = [];
+    const halfLength = Math.floor(teams.length / 2);
+    for (let i = 0; i < halfLength; i++) {
+      matchupList.push({
+        id: `match-${i + 1}`,
+        team1: teams[i] || null,
+        team2: teams[i + halfLength] || null,
+      });
+    }
+    return matchupList;
+  }, [line]);
 
   const handleTeamSelect = (team: Team) => {
     const newSelected = new Set(selectedTeams);
     if (newSelected.has(team.id)) {
-      // Deselect if already selected
       newSelected.delete(team.id);
     } else {
-      // Only allow selection if under max (4)
-      if (newSelected.size < 4) {
+      const maxSelections = line?.choiceLimit || 4;
+      if (newSelected.size < maxSelections) {
         newSelected.add(team.id);
       }
     }
@@ -69,13 +72,35 @@ function QuarterfinalsPage() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <PicksLayout slug="quarterfinals">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading teams...</div>
+        </div>
+      </PicksLayout>
+    );
+  }
+
+  if (error || !line) {
+    return (
+      <PicksLayout slug="quarterfinals">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-destructive">
+            {error ? "Error loading teams" : "No teams available"}
+          </div>
+        </div>
+      </PicksLayout>
+    );
+  }
+
   return (
     <PicksLayout slug="quarterfinals">
       <BracketView
         matchups={matchups}
         onTeamSelect={handleTeamSelect}
         selectedTeams={selectedTeams}
-        maxSelections={4}
+        maxSelections={line.choiceLimit}
       />
     </PicksLayout>
   );

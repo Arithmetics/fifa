@@ -5,15 +5,8 @@ import {
   type Matchup,
   type Team,
 } from "@/components/picks/bracket-view";
-import { useState, useEffect } from "react";
-
-// Fake data for 4 teams that advanced from quarterfinals
-const FAKE_SEMIFINALS_TEAMS: Team[] = [
-  { id: "sf-1", name: "Brazil", flag: "🇧🇷", points: 30 },
-  { id: "sf-2", name: "Argentina", flag: "🇦🇷", points: 29 },
-  { id: "sf-3", name: "France", flag: "🇫🇷", points: 28 },
-  { id: "sf-4", name: "Spain", flag: "🇪🇸", points: 27 },
-];
+import { useState, useEffect, useMemo } from "react";
+import { useLineByStepSlug } from "@/lib/lines";
 
 const SEMIFINALS_STORAGE_KEY = "fifa_semifinals_winners";
 
@@ -22,6 +15,7 @@ export const Route = createFileRoute("/picks/semifinals")({
 });
 
 function SemifinalsPage() {
+  const { data: line, isLoading, error } = useLineByStepSlug("semifinals");
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
   // Load saved selections from localStorage
@@ -37,24 +31,37 @@ function SemifinalsPage() {
     }
   }, []);
 
-  // Create matchups: pair teams 1-2 with teams 3-4
-  const matchups: Matchup[] = [];
-  for (let i = 0; i < 2; i++) {
-    matchups.push({
-      id: `match-${i + 1}`,
-      team1: FAKE_SEMIFINALS_TEAMS[i],
-      team2: FAKE_SEMIFINALS_TEAMS[i + 2],
-    });
-  }
+  // Convert choices to teams and create matchups
+  const matchups: Matchup[] = useMemo(() => {
+    if (!line?.choices) return [];
+
+    const teams: Team[] = line.choices.map((choice) => ({
+      id: choice.id,
+      name: choice.title,
+      flag: choice.flag || "",
+      points: choice.secondaryPoints,
+    }));
+
+    // Create matchups: pair teams 1-2 with teams 3-4
+    const matchupList: Matchup[] = [];
+    const halfLength = Math.floor(teams.length / 2);
+    for (let i = 0; i < halfLength; i++) {
+      matchupList.push({
+        id: `match-${i + 1}`,
+        team1: teams[i] || null,
+        team2: teams[i + halfLength] || null,
+      });
+    }
+    return matchupList;
+  }, [line]);
 
   const handleTeamSelect = (team: Team) => {
     const newSelected = new Set(selectedTeams);
     if (newSelected.has(team.id)) {
-      // Deselect if already selected
       newSelected.delete(team.id);
     } else {
-      // Only allow selection if under max (2)
-      if (newSelected.size < 2) {
+      const maxSelections = line?.choiceLimit || 2;
+      if (newSelected.size < maxSelections) {
         newSelected.add(team.id);
       }
     }
@@ -65,13 +72,35 @@ function SemifinalsPage() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <PicksLayout slug="semifinals">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading teams...</div>
+        </div>
+      </PicksLayout>
+    );
+  }
+
+  if (error || !line) {
+    return (
+      <PicksLayout slug="semifinals">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-destructive">
+            {error ? "Error loading teams" : "No teams available"}
+          </div>
+        </div>
+      </PicksLayout>
+    );
+  }
+
   return (
     <PicksLayout slug="semifinals">
       <BracketView
         matchups={matchups}
         onTeamSelect={handleTeamSelect}
         selectedTeams={selectedTeams}
-        maxSelections={2}
+        maxSelections={line.choiceLimit}
       />
     </PicksLayout>
   );
