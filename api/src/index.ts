@@ -14,6 +14,7 @@ import { auth } from "./auth.js";
 import { fromNodeHeaders } from "better-auth/node";
 import userRoutes from "./routes/user.js";
 import linesRoutes from "./routes/lines.js";
+import betsRoutes from "./routes/bets.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +33,9 @@ app.use("/api/auth/user", userRoutes);
 
 // Lines routes
 app.use("/api/lines", linesRoutes);
+
+// Bets routes
+app.use("/api/bets", betsRoutes);
 
 // Better Auth middleware - handle all other auth routes
 // Express 5 requires named wildcards

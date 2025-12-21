@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PicksLayout } from "@/components/picks/picks-layout";
-import { PlayerList, type Player } from "@/components/picks/player-list";
-import { useState, useEffect } from "react";
+import {
+  PlayerPicksComponent,
+  type PlayerPicksHandle,
+} from "@/components/picks/player-picks";
+import { useRef } from "react";
 
 // Fake data for player awards - Golden Boot (top scorer)
 const FAKE_GOLDEN_BOOT_PLAYERS: Player[] = [
@@ -306,101 +309,26 @@ const FAKE_YOUNG_PLAYER_PLAYERS: Player[] = [
   },
 ].slice(0, 10);
 
-const PLAYER_PICKS_STORAGE_KEY = "fifa_player_picks";
-
 export const Route = createFileRoute("/picks/player-picks")({
   component: PlayerPicksPage,
 });
 
 function PlayerPicksPage() {
-  const [selectedPicks, setSelectedPicks] = useState<Record<string, string>>(
-    {}
-  );
+  const componentRef = useRef<PlayerPicksHandle>(null);
 
-  // Load saved selections from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(PLAYER_PICKS_STORAGE_KEY);
-    if (stored) {
-      try {
-        setSelectedPicks(JSON.parse(stored));
-      } catch (e) {
-        console.error("Failed to parse stored player picks", e);
-      }
+  const handleSubmit = async () => {
+    if (componentRef.current) {
+      await componentRef.current.submit();
     }
-  }, []);
+  };
 
-  const handlePlayerSelect = (awardKey: string, player: Player) => {
-    const newPicks = {
-      ...selectedPicks,
-      [awardKey]: player.id,
-    };
-    setSelectedPicks(newPicks);
-    localStorage.setItem(PLAYER_PICKS_STORAGE_KEY, JSON.stringify(newPicks));
+  const isValid = () => {
+    return componentRef.current?.isValid() ?? false;
   };
 
   return (
-    <PicksLayout slug="player-picks">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Golden Boot */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">
-            Golden Boot (Top Scorer)
-          </h3>
-          <PlayerList
-            players={FAKE_GOLDEN_BOOT_PLAYERS}
-            onPlayerSelect={(player) =>
-              handlePlayerSelect("golden-boot", player)
-            }
-            selectedPlayerId={selectedPicks["golden-boot"]}
-            maxSelections={1}
-          />
-        </div>
-
-        {/* Golden Ball */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">
-            Golden Ball (Best Player)
-          </h3>
-          <PlayerList
-            players={FAKE_GOLDEN_BALL_PLAYERS}
-            onPlayerSelect={(player) =>
-              handlePlayerSelect("golden-ball", player)
-            }
-            selectedPlayerId={selectedPicks["golden-ball"]}
-            maxSelections={1}
-          />
-        </div>
-
-        {/* Golden Glove */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">
-            Golden Glove (Best Goalkeeper)
-          </h3>
-          <PlayerList
-            players={FAKE_GOLDEN_GLOVE_PLAYERS}
-            onPlayerSelect={(player) =>
-              handlePlayerSelect("golden-glove", player)
-            }
-            selectedPlayerId={selectedPicks["golden-glove"]}
-            maxSelections={1}
-          />
-        </div>
-
-        {/* FIFA Young Player Award */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">
-            FIFA Young Player Award
-          </h3>
-          <PlayerList
-            players={FAKE_YOUNG_PLAYER_PLAYERS}
-            onPlayerSelect={(player) =>
-              handlePlayerSelect("young-player", player)
-            }
-            selectedPlayerId={selectedPicks["young-player"]}
-            maxSelections={1}
-          />
-        </div>
-      </div>
+    <PicksLayout slug="player-picks" onSubmit={handleSubmit} isValid={isValid}>
+      <PlayerPicksComponent ref={componentRef} />
     </PicksLayout>
   );
 }

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -18,169 +18,97 @@ import {
   getNextStep,
   getStepIndex,
 } from "@/lib/picks-steps";
-import {
-  GROUP_WINNERS_STORAGE_KEY,
-  GROUP_RUNNERS_UP_STORAGE_KEY,
-  THIRD_PLACE_STORAGE_KEY,
-} from "@/lib/picks-data";
-
-const ROUND_OF_32_STORAGE_KEY = "fifa_round_of_32_winners";
-const ROUND_OF_16_STORAGE_KEY = "fifa_round_of_16_winners";
-const QUARTERFINALS_STORAGE_KEY = "fifa_quarterfinals_winners";
-const SEMIFINALS_STORAGE_KEY = "fifa_semifinals_winners";
-const CHAMPIONSHIP_STORAGE_KEY = "fifa_championship_winner";
-const PLAYER_PICKS_STORAGE_KEY = "fifa_player_picks";
+import { useBets } from "@/lib/bets";
 
 type PicksLayoutProps = {
   slug: string;
   children: ReactNode;
+  onSubmit?: () => Promise<void>;
+  isValid?: () => boolean;
 };
 
-export function PicksLayout({ slug, children }: PicksLayoutProps) {
+export function PicksLayout({
+  slug,
+  children,
+  onSubmit,
+  isValid,
+}: PicksLayoutProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   const currentStep = getStepBySlug(slug);
   const stepIndex = getStepIndex(slug);
 
-  // Calculate step-specific progress with state to trigger re-renders
-  const [stepProgress, setStepProgress] = useState<{
-    current: number;
-    total: number;
-    label: string;
-  } | null>(null);
+  const { data: betsData } = useBets();
 
-  useEffect(() => {
-    if (!currentStep?.progressKey) {
-      setStepProgress(null);
-      return;
+  // Calculate step-specific progress from bets
+  const stepProgress = useMemo(() => {
+    if (!currentStep?.progressKey || !betsData) return null;
+
+    const bets = betsData.bets;
+    const collectionMap: Record<string, string> = {
+      "group-winners": "group-winner",
+      "group-runners-up": "group-runner-up",
+      "third-place-advancers": "group-third-place",
+    };
+
+    const collection = collectionMap[currentStep.progressKey];
+
+    if (collection) {
+      // For collection-based steps (groups)
+      const collectionBets = bets.filter((bet) =>
+        bet.choice.line.collection.includes(collection)
+      );
+      return {
+        current: collectionBets.length,
+        total: currentStep.progressTotal || 12,
+        label: currentStep.progressLabel || "Selected",
+      };
     }
 
-    const calculateProgress = () => {
-      if (currentStep.progressKey === "group-winners") {
-        // Group Winners: count selected groups / 12
-        const stored = localStorage.getItem(GROUP_WINNERS_STORAGE_KEY);
-        const selectedWinners = stored ? JSON.parse(stored) : {};
-        const selectedCount =
-          Object.values(selectedWinners).filter(Boolean).length;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 12,
-          label: currentStep.progressLabel || "Group Winners Selected",
-        });
-      } else if (currentStep.progressKey === "group-runners-up") {
-        // Group Runners Up: count selected groups / 12
-        const stored = localStorage.getItem(GROUP_RUNNERS_UP_STORAGE_KEY);
-        const selectedRunnersUp = stored ? JSON.parse(stored) : {};
-        const selectedCount =
-          Object.values(selectedRunnersUp).filter(Boolean).length;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 12,
-          label: currentStep.progressLabel || "Group Runners Up Selected",
-        });
-      } else if (currentStep.progressKey === "third-place-advancers") {
-        // Third Place Advancers: count selected / 8
-        const stored = localStorage.getItem(THIRD_PLACE_STORAGE_KEY);
-        const selectedAdvancers = stored ? JSON.parse(stored) : {};
-        const totalSelected = Object.values(selectedAdvancers).flat().length;
-        setStepProgress({
-          current: totalSelected,
-          total: currentStep.progressTotal || 8,
-          label: currentStep.progressLabel || "Third Place Advancers Selected",
-        });
-      } else if (currentStep.progressKey === "round-of-32") {
-        // Round of 32: count selected teams / 16
-        const stored = localStorage.getItem(ROUND_OF_32_STORAGE_KEY);
-        const selectedTeams = stored ? JSON.parse(stored) : [];
-        const selectedCount = Array.isArray(selectedTeams)
-          ? selectedTeams.length
-          : 0;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 16,
-          label: currentStep.progressLabel || "Teams Selected",
-        });
-      } else if (currentStep.progressKey === "round-of-16") {
-        // Round of 16: count selected teams / 8
-        const stored = localStorage.getItem(ROUND_OF_16_STORAGE_KEY);
-        const selectedTeams = stored ? JSON.parse(stored) : [];
-        const selectedCount = Array.isArray(selectedTeams)
-          ? selectedTeams.length
-          : 0;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 8,
-          label: currentStep.progressLabel || "Teams Selected",
-        });
-      } else if (currentStep.progressKey === "quarterfinals") {
-        // Quarterfinals: count selected teams / 4
-        const stored = localStorage.getItem(QUARTERFINALS_STORAGE_KEY);
-        const selectedTeams = stored ? JSON.parse(stored) : [];
-        const selectedCount = Array.isArray(selectedTeams)
-          ? selectedTeams.length
-          : 0;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 4,
-          label: currentStep.progressLabel || "Teams Selected",
-        });
-      } else if (currentStep.progressKey === "semifinals") {
-        // Semifinals: count selected teams / 2
-        const stored = localStorage.getItem(SEMIFINALS_STORAGE_KEY);
-        const selectedTeams = stored ? JSON.parse(stored) : [];
-        const selectedCount = Array.isArray(selectedTeams)
-          ? selectedTeams.length
-          : 0;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 2,
-          label: currentStep.progressLabel || "Teams Selected",
-        });
-      } else if (currentStep.progressKey === "championship") {
-        // Championship: count selected teams / 1
-        const stored = localStorage.getItem(CHAMPIONSHIP_STORAGE_KEY);
-        const selectedTeams = stored ? JSON.parse(stored) : [];
-        const selectedCount = Array.isArray(selectedTeams)
-          ? selectedTeams.length
-          : 0;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 1,
-          label: currentStep.progressLabel || "Team Selected",
-        });
-      } else if (currentStep.progressKey === "player-picks") {
-        // Player Picks: count selected awards / 4
-        const stored = localStorage.getItem(PLAYER_PICKS_STORAGE_KEY);
-        const selectedPicks = stored ? JSON.parse(stored) : {};
-        const selectedCount =
-          Object.values(selectedPicks).filter(Boolean).length;
-        setStepProgress({
-          current: selectedCount,
-          total: currentStep.progressTotal || 4,
-          label: currentStep.progressLabel || "Awards Selected",
-        });
-      } else {
-        setStepProgress(null);
-      }
+    // For single-line steps (rounds, championship)
+    const stepToLineTitle: Record<string, string> = {
+      "round-of-32": "Round of 32",
+      "round-of-16": "Round of 16",
+      quarterfinals: "Quarterfinals",
+      semifinals: "Semifinals",
+      championship: "Championship",
     };
 
-    calculateProgress();
+    const lineTitle = stepToLineTitle[currentStep.progressKey];
+    if (lineTitle) {
+      const lineBets = bets.filter(
+        (bet) => bet.choice.line.title === lineTitle
+      );
+      return {
+        current: lineBets.length,
+        total: currentStep.progressTotal || 0,
+        label: currentStep.progressLabel || "Teams Selected",
+      };
+    }
 
-    // Listen for storage events to update progress when localStorage changes
-    const handleStorageChange = () => {
-      calculateProgress();
-    };
+    // For player picks
+    if (currentStep.progressKey === "player-picks") {
+      const playerLineTitles = [
+        "Golden Boot (Top Scorer)",
+        "Golden Ball (Best Player)",
+        "Golden Glove (Best Goalkeeper)",
+        "FIFA Young Player Award",
+      ];
+      const playerBets = bets.filter((bet) =>
+        playerLineTitles.includes(bet.choice.line.title)
+      );
+      // Count unique lines with bets
+      const uniqueLines = new Set(playerBets.map((bet) => bet.choice.line.id));
+      return {
+        current: uniqueLines.size,
+        total: currentStep.progressTotal || 4,
+        label: currentStep.progressLabel || "Awards Selected",
+      };
+    }
 
-    window.addEventListener("storage", handleStorageChange);
-    // Also poll periodically to catch same-tab localStorage changes
-    const interval = setInterval(calculateProgress, 100);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [currentStep]);
+    return null;
+  }, [currentStep, betsData]);
 
   const stepProgressValue = stepProgress
     ? (stepProgress.current / stepProgress.total) * 100
@@ -228,24 +156,53 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
     }
   };
 
-  const handleNext = () => {
-    if (nextStep) {
-      const routeMap: Record<string, string> = {
-        "group-winners": "/picks/group-winners",
-        "group-runners-up": "/picks/group-runners-up",
-        "third-place-advancers": "/picks/third-place-advancers",
-        "round-of-32": "/picks/round-of-32",
-        "round-of-16": "/picks/round-of-16",
-        quarterfinals: "/picks/quarterfinals",
-        semifinals: "/picks/semifinals",
-        championship: "/picks/championship",
-        "player-picks": "/picks/player-picks",
-        summary: "/picks/summary",
-      };
-      const route = routeMap[nextStep.slug];
-      if (route) {
-        navigate({ to: route as any });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleNext = async () => {
+    if (!nextStep) return;
+
+    // Validate if validator provided
+    if (isValid && !isValid()) {
+      setSubmitError("Please complete all required selections");
+      return;
+    }
+
+    // Submit if submit handler provided
+    if (onSubmit) {
+      setIsSubmitting(true);
+      setSubmitError(null);
+      try {
+        await onSubmit();
+        // Clear error on success
+        setSubmitError(null);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to save selections";
+        setSubmitError(message);
+        setIsSubmitting(false);
+        return; // Don't navigate on error
+      } finally {
+        setIsSubmitting(false);
       }
+    }
+
+    // Navigate to next step
+    const routeMap: Record<string, string> = {
+      "group-winners": "/picks/group-winners",
+      "group-runners-up": "/picks/group-runners-up",
+      "third-place-advancers": "/picks/third-place-advancers",
+      "round-of-32": "/picks/round-of-32",
+      "round-of-16": "/picks/round-of-16",
+      quarterfinals: "/picks/quarterfinals",
+      semifinals: "/picks/semifinals",
+      championship: "/picks/championship",
+      "player-picks": "/picks/player-picks",
+      summary: "/picks/summary",
+    };
+    const route = routeMap[nextStep.slug];
+    if (route) {
+      navigate({ to: route as any });
     }
   };
 
@@ -302,35 +259,46 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
             )}
 
             {/* Step Indicator and Navigation */}
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={!previousStep}
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
+            <div className="space-y-2">
+              {submitError && (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive text-center">
+                  {submitError}
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={!previousStep || isSubmitting}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Previous
+                </Button>
 
-              <span className="text-sm text-muted-foreground">
-                Step {stepIndex + 1} of {STEPS.length}
-              </span>
+                <span className="text-sm text-muted-foreground">
+                  Step {stepIndex + 1} of {STEPS.length}
+                </span>
 
-              <div className="flex gap-2">
-                {nextStep && nextStep.slug !== "summary" ? (
-                  <Button onClick={handleNext}>
-                    Next
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => {
-                      navigate({ to: "/picks/summary" as any });
-                    }}
-                  >
-                    Submit Picks
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {nextStep && nextStep.slug !== "summary" ? (
+                    <Button
+                      onClick={handleNext}
+                      disabled={isSubmitting || (isValid && !isValid())}
+                    >
+                      {isSubmitting ? "Saving..." : "Next"}
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        navigate({ to: "/picks/summary" as any });
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Submit Picks
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -368,11 +368,6 @@ function generateGroups() {
 
 export const GROUPS = generateGroups();
 
-// Storage keys
-export const GROUP_WINNERS_STORAGE_KEY = "fifa_group_winners";
-export const GROUP_RUNNERS_UP_STORAGE_KEY = "fifa_group_runners_up";
-export const THIRD_PLACE_STORAGE_KEY = "fifa_third_place_advancers";
-
 // Types
 export type GroupWinnersState = Record<string, string>;
 export type GroupRunnersUpState = Record<string, string>;
