@@ -129,7 +129,8 @@ export function StepFooter({
             </Button>
 
             <span className="text-sm text-muted-foreground">
-              Step {stepIndex + 1} of {STEPS.length}
+              Step {stepIndex + 1} of{" "}
+              {STEPS.filter((s) => s.slug !== "summary").length}
             </span>
 
             <div className="flex gap-2">
@@ -140,8 +141,14 @@ export function StepFooter({
                 </Button>
               ) : (
                 <Button
-                  onClick={() => {
-                    navigate({ to: "/picks/summary" as any });
+                  onClick={async () => {
+                    try {
+                      await onSubmit();
+                      navigate({ to: "/picks/summary" as any });
+                    } catch (err) {
+                      // Error handling is done by the component
+                      // Don't navigate on error
+                    }
                   }}
                   disabled={isSubmitting}
                 >

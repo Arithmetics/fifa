@@ -87,24 +87,27 @@ router.post("/", async (req, res) => {
     // Validate all choices belong to lines in the same collection
     const firstLine = choices[0].line;
     const firstCollection = [...firstLine.collection].sort();
+    const collectionLimit = firstLine.choiceCollectionLimit;
 
-    // Collections must match exactly (same elements, in any order)
-    const allSameCollection = choices.every((choice) => {
-      const choiceCollection = [...choice.line.collection].sort();
-      if (choiceCollection.length !== firstCollection.length) return false;
-      return choiceCollection.every(
-        (item, idx) => item === firstCollection[idx]
-      );
-    });
-
-    if (!allSameCollection) {
-      return res.status(400).json({
-        error: "All choices must belong to lines in the same collection",
+    // If collectionLimit is null (single line, no collection), skip collection validation
+    // Otherwise, validate all choices belong to lines in the same collection
+    if (collectionLimit !== null) {
+      const allSameCollection = choices.every((choice) => {
+        const choiceCollection = [...choice.line.collection].sort();
+        if (choiceCollection.length !== firstCollection.length) return false;
+        return choiceCollection.every(
+          (item, idx) => item === firstCollection[idx]
+        );
       });
+
+      if (!allSameCollection) {
+        return res.status(400).json({
+          error: "All choices must belong to lines in the same collection",
+        });
+      }
     }
 
     // Validate collection limit
-    const collectionLimit = firstLine.choiceCollectionLimit;
 
     if (collectionLimit === null) {
       // If no collection limit, validate that all choices are from the same line
@@ -174,7 +177,7 @@ router.post("/", async (req, res) => {
     }
 
     // Create new bets
-    const bets = await prisma.bet.createMany({
+    await prisma.bet.createMany({
       data: choiceIds.map((choiceId) => ({
         choiceId,
         userId: session.user.id,
