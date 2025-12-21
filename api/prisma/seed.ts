@@ -602,30 +602,6 @@ const COUNTRIES = [
     semifinalsPoints: 25,
     championshipPoints: 34,
   },
-  {
-    name: "Austria",
-    flag: "🇦🇹",
-    group: "L",
-    winGroupPoints: 70,
-    qualifyPoints: 21,
-    roundOf32Points: 11,
-    roundOf16Points: 16,
-    quarterfinalsPoints: 21,
-    semifinalsPoints: 26,
-    championshipPoints: 36,
-  },
-  {
-    name: "Wales",
-    flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
-    group: "L",
-    winGroupPoints: 69,
-    qualifyPoints: 20,
-    roundOf32Points: 1,
-    roundOf16Points: 6,
-    quarterfinalsPoints: 11,
-    semifinalsPoints: 16,
-    championshipPoints: 26,
-  },
 ];
 
 // Player data

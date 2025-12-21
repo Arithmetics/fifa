@@ -122,6 +122,16 @@ router.post("/", async (req, res) => {
           error: `Must select exactly ${singleLine.choiceLimit} choice(s) for this line`,
         });
       }
+
+      // For single lines (no collection), delete bets only for this specific line
+      await prisma.bet.deleteMany({
+        where: {
+          userId: session.user.id,
+          choice: {
+            lineId: singleLine.id,
+          },
+        },
+      });
     } else {
       // Validate against collection limit
       if (choiceIds.length !== collectionLimit) {
@@ -129,39 +139,39 @@ router.post("/", async (req, res) => {
           error: `Must select exactly ${collectionLimit} choice(s) for this collection`,
         });
       }
-    }
 
-    // Delete existing bets for this collection from this user
-    // Find all lines that have the same collection (to handle all lines in the collection, not just submitted ones)
-    const allLines = await prisma.line.findMany({
-      select: {
-        id: true,
-        collection: true,
-      },
-    });
+      // Delete existing bets for this collection from this user
+      // Find all lines that have the same collection (to handle all lines in the collection, not just submitted ones)
+      const allLines = await prisma.line.findMany({
+        select: {
+          id: true,
+          collection: true,
+        },
+      });
 
-    // Filter to lines with matching collection (same elements, same length)
-    const matchingLineIds = allLines
-      .filter((line) => {
-        const lineCollection = [...line.collection].sort();
-        return (
-          lineCollection.length === firstCollection.length &&
-          lineCollection.every((item, idx) => item === firstCollection[idx])
-        );
-      })
-      .map((l) => l.id);
+      // Filter to lines with matching collection (same elements, same length)
+      const matchingLineIds = allLines
+        .filter((line) => {
+          const lineCollection = [...line.collection].sort();
+          return (
+            lineCollection.length === firstCollection.length &&
+            lineCollection.every((item, idx) => item === firstCollection[idx])
+          );
+        })
+        .map((l) => l.id);
 
-    // Delete all bets for this user for lines in this collection
-    await prisma.bet.deleteMany({
-      where: {
-        userId: session.user.id,
-        choice: {
-          lineId: {
-            in: matchingLineIds,
+      // Delete all bets for this user for lines in this collection
+      await prisma.bet.deleteMany({
+        where: {
+          userId: session.user.id,
+          choice: {
+            lineId: {
+              in: matchingLineIds,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     // Create new bets
     const bets = await prisma.bet.createMany({
