@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,9 +47,16 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           {/* Header with Title and Logout */}
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">🌍 World Cup 2026 ⚽</h1>
-            <Button onClick={signOut} variant="outline" size="sm">
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link to="/admin">
+                <Button variant="outline" size="sm">
+                  Admin
+                </Button>
+              </Link>
+              <Button onClick={signOut} variant="outline" size="sm">
+                Sign Out
+              </Button>
+            </div>
           </div>
 
           {/* Step Title */}

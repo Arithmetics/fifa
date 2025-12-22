@@ -15,6 +15,7 @@ export type BetWithRelations = {
     primaryPoints: number;
     secondaryPoints: number;
     isPrimaryWin: boolean;
+    isSecondaryWin: boolean;
     createdAt: string;
     updatedAt: string;
     line: {

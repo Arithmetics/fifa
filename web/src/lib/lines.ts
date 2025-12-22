@@ -9,6 +9,7 @@ export type Choice = {
   primaryPoints: number;
   secondaryPoints: number;
   isPrimaryWin: boolean;
+  isSecondaryWin: boolean;
   createdAt: string;
   updatedAt: string;
 };
