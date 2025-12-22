@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WinStatusConfig } from "@/components/admin/win-status-config";
 
 export const Route = createFileRoute("/admin")({
@@ -55,127 +56,137 @@ function AdminComponent() {
             </div>
           </div>
 
-          {/* Win Status Configuration */}
-          <WinStatusConfig />
-
-          {/* Admin Panel Card */}
+          {/* Admin Panel with Tabs */}
           <Card>
             <CardHeader>
               <CardTitle className="text-3xl">Admin Panel</CardTitle>
               <CardDescription>
-                View all users and their pick completion status
+                Manage users and configure win status
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <p className="text-muted-foreground">Loading users...</p>
-              ) : error ? (
-                <p className="text-destructive">
-                  Error loading users: {error instanceof Error ? error.message : "Unknown error"}
-                </p>
-              ) : adminData ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="text-left p-3 font-semibold sticky left-0 bg-background">
-                          User
-                        </th>
-                        <th className="text-left p-3 font-semibold">Email</th>
-                        <th className="text-center p-3 font-semibold">Paid</th>
-                        {categories.map((category) => (
-                          <th
-                            key={category.slug}
-                            className="text-center p-3 font-semibold min-w-[120px]"
-                            title={category.description}
-                          >
-                            {category.name}
-                          </th>
-                        ))}
-                        <th className="text-center p-3 font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {adminData.users.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={categories.length + 4}
-                            className="p-4 text-center text-muted-foreground"
-                          >
-                            No users found
-                          </td>
-                        </tr>
-                      ) : (
-                        adminData.users.map((user) => (
-                          <tr
-                            key={user.id}
-                            className="border-b hover:bg-muted/50 transition-colors"
-                          >
-                            <td className="p-3 font-medium sticky left-0 bg-background">
-                              {user.displayName || user.name}
-                            </td>
-                            <td className="p-3 text-muted-foreground">
-                              {user.email}
-                            </td>
-                            <td className="p-3 text-center">
-                              <Checkbox
-                                checked={user.hasPaid}
-                                onCheckedChange={() =>
-                                  handlePaymentToggle(user.id, user.hasPaid)
-                                }
-                                disabled={updatePaymentStatus.isPending}
-                                aria-label={`${user.displayName || user.name} payment status`}
-                              />
-                            </td>
-                            {categories.map((category) => {
-                              const status = user.pickStatus[category.slug];
-                              if (!status) {
-                                return (
-                                  <td key={category.slug} className="p-3 text-center">
-                                    -
-                                  </td>
-                                );
-                              }
-                              const isComplete =
-                                status.current === status.required;
-                              const isEmpty = status.current === 0;
-
-                              return (
-                                <td
-                                  key={category.slug}
-                                  className={`text-center p-3 ${
-                                    isEmpty
-                                      ? "bg-destructive/20 text-destructive font-semibold"
-                                      : !isComplete
-                                      ? "bg-yellow-500/20 text-yellow-600 font-semibold"
-                                      : "text-muted-foreground"
-                                  }`}
-                                  title={`${status.current} / ${status.required} picks${!isComplete ? " (Incomplete)" : ""}`}
-                                >
-                                  {status.current} / {status.required}
-                                </td>
-                              );
-                            })}
-                            <td className="p-3 text-center">
-                              {user.allComplete ? (
-                                <span className="text-green-600 font-semibold">
-                                  ✓ Complete
-                                </span>
-                              ) : (
-                                <span className="text-yellow-600 font-semibold">
-                                  ⚠ Incomplete
-                                </span>
-                              )}
-                            </td>
+              <Tabs defaultValue="users" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="users">Users</TabsTrigger>
+                  <TabsTrigger value="results">Results</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="users" className="mt-4">
+                  {isLoading ? (
+                    <p className="text-muted-foreground">Loading users...</p>
+                  ) : error ? (
+                    <p className="text-destructive">
+                      Error loading users: {error instanceof Error ? error.message : "Unknown error"}
+                    </p>
+                  ) : adminData ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/50">
+                            <th className="text-left p-3 font-semibold sticky left-0 bg-background">
+                              User
+                            </th>
+                            <th className="text-left p-3 font-semibold">Email</th>
+                            <th className="text-center p-3 font-semibold">Paid</th>
+                            {categories.map((category) => (
+                              <th
+                                key={category.slug}
+                                className="text-center p-3 font-semibold min-w-[120px]"
+                                title={category.description}
+                              >
+                                {category.name}
+                              </th>
+                            ))}
+                            <th className="text-center p-3 font-semibold">Status</th>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No users found.</p>
-              )}
+                        </thead>
+                        <tbody>
+                          {adminData.users.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={categories.length + 4}
+                                className="p-4 text-center text-muted-foreground"
+                              >
+                                No users found
+                              </td>
+                            </tr>
+                          ) : (
+                            adminData.users.map((user) => (
+                              <tr
+                                key={user.id}
+                                className="border-b hover:bg-muted/50 transition-colors"
+                              >
+                                <td className="p-3 font-medium sticky left-0 bg-background">
+                                  {user.displayName || user.name}
+                                </td>
+                                <td className="p-3 text-muted-foreground">
+                                  {user.email}
+                                </td>
+                                <td className="p-3 text-center">
+                                  <Checkbox
+                                    checked={user.hasPaid}
+                                    onCheckedChange={() =>
+                                      handlePaymentToggle(user.id, user.hasPaid)
+                                    }
+                                    disabled={updatePaymentStatus.isPending}
+                                    aria-label={`${user.displayName || user.name} payment status`}
+                                  />
+                                </td>
+                                {categories.map((category) => {
+                                  const status = user.pickStatus[category.slug];
+                                  if (!status) {
+                                    return (
+                                      <td key={category.slug} className="p-3 text-center">
+                                        -
+                                      </td>
+                                    );
+                                  }
+                                  const isComplete =
+                                    status.current === status.required;
+                                  const isEmpty = status.current === 0;
+
+                                  return (
+                                    <td
+                                      key={category.slug}
+                                      className={`text-center p-3 ${
+                                        isEmpty
+                                          ? "bg-destructive/20 text-destructive font-semibold"
+                                          : !isComplete
+                                          ? "bg-yellow-500/20 text-yellow-600 font-semibold"
+                                          : "text-muted-foreground"
+                                      }`}
+                                      title={`${status.current} / ${status.required} picks${!isComplete ? " (Incomplete)" : ""}`}
+                                    >
+                                      {status.current} / {status.required}
+                                    </td>
+                                  );
+                                })}
+                                <td className="p-3 text-center">
+                                  {user.allComplete ? (
+                                    <span className="text-green-600 font-semibold">
+                                      ✓ Complete
+                                    </span>
+                                  ) : (
+                                    <span className="text-yellow-600 font-semibold">
+                                      ⚠ Incomplete
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No users found.</p>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="results" className="mt-4">
+                  <WinStatusConfig />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
