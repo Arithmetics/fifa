@@ -16,7 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/leaderboard")({
   component: LeaderboardComponent,
@@ -41,12 +42,24 @@ type LeaderboardEntry = {
   finalFour: PickWithPoints[]; // Semifinals winners (2 teams)
   quarterfinals: PickWithPoints[]; // Quarterfinals winners (4 teams)
   totalPoints: number;
+  // Additional picks for expanded view
+  groupWinners: PickWithPoints[]; // Group winners (primary points only)
+  qualifiers: PickWithPoints[]; // Group winner secondary + runners up + third place
+  roundOf32: PickWithPoints[]; // Round of 32 picks
+  roundOf16: PickWithPoints[]; // Round of 16 picks
+  playerAwards: {
+    goldenBoot: PickWithPoints | null;
+    goldenBall: PickWithPoints | null;
+    goldenGlove: PickWithPoints | null;
+    youngPlayer: PickWithPoints | null;
+  };
 };
 
 function LeaderboardComponent() {
   const { signOut } = useAuth();
   const { data: adminData, isLoading } = useAdminUsers();
   const { data: linesData } = useLines();
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Calculate leaderboard entries
   const leaderboard = useMemo(() => {
@@ -158,37 +171,192 @@ function LeaderboardComponent() {
         lineId: bet.choice.lineId,
       }));
 
+      // Find group winners (primary points only - show all picks but use primaryPoints)
+      const groupWinnerBets = userData.bets.filter(
+        (bet) =>
+          bet.choice.line.title.startsWith("Group ") &&
+          bet.choice.line.title.endsWith(" Winner")
+      );
+      const groupWinners: PickWithPoints[] = groupWinnerBets.map((bet) => ({
+        flag: bet.choice.flag,
+        name: bet.choice.title,
+        points: bet.choice.primaryPoints, // Always show primary points
+        status: getPickStatus(
+          bet.choice.id,
+          bet.choice.lineId,
+          bet.choice.isPrimaryWin
+        ),
+        choiceId: bet.choice.id,
+        lineId: bet.choice.lineId,
+      }));
+
+      // Find qualifiers: group winner secondary + runners up + third place (show all picks)
+      const qualifiers: PickWithPoints[] = [];
+      // Group winner secondary wins (show all group winner picks, use secondaryPoints)
+      groupWinnerBets.forEach((bet) => {
+        qualifiers.push({
+          flag: bet.choice.flag,
+          name: bet.choice.title,
+          points: bet.choice.secondaryPoints,
+          status: getPickStatus(
+            bet.choice.id,
+            bet.choice.lineId,
+            bet.choice.isSecondaryWin && !bet.choice.isPrimaryWin
+          ),
+          choiceId: bet.choice.id,
+          lineId: bet.choice.lineId,
+        });
+      });
+      // Runners up (primary points - show all picks)
+      const runnerUpBets = userData.bets.filter((bet) =>
+        bet.choice.line.title.includes("Runner Up")
+      );
+      runnerUpBets.forEach((bet) => {
+        qualifiers.push({
+          flag: bet.choice.flag,
+          name: bet.choice.title,
+          points: bet.choice.primaryPoints,
+          status: getPickStatus(
+            bet.choice.id,
+            bet.choice.lineId,
+            bet.choice.isPrimaryWin
+          ),
+          choiceId: bet.choice.id,
+          lineId: bet.choice.lineId,
+        });
+      });
+      // Third place (primary points - show all picks)
+      const thirdPlaceBets = userData.bets.filter((bet) =>
+        bet.choice.line.title.includes("Third Place")
+      );
+      thirdPlaceBets.forEach((bet) => {
+        qualifiers.push({
+          flag: bet.choice.flag,
+          name: bet.choice.title,
+          points: bet.choice.primaryPoints,
+          status: getPickStatus(
+            bet.choice.id,
+            bet.choice.lineId,
+            bet.choice.isPrimaryWin
+          ),
+          choiceId: bet.choice.id,
+          lineId: bet.choice.lineId,
+        });
+      });
+
+      // Find Round of 32 picks
+      const roundOf32Bets = userData.bets.filter(
+        (bet) => bet.choice.line.title === "Round of 32"
+      );
+      const roundOf32: PickWithPoints[] = roundOf32Bets.map((bet) => ({
+        flag: bet.choice.flag,
+        name: bet.choice.title,
+        points: getPotentialPoints(bet.choice),
+        status: getPickStatus(
+          bet.choice.id,
+          bet.choice.lineId,
+          bet.choice.isPrimaryWin || bet.choice.isSecondaryWin
+        ),
+        choiceId: bet.choice.id,
+        lineId: bet.choice.lineId,
+      }));
+
+      // Find Round of 16 picks
+      const roundOf16Bets = userData.bets.filter(
+        (bet) => bet.choice.line.title === "Round of 16"
+      );
+      const roundOf16: PickWithPoints[] = roundOf16Bets.map((bet) => ({
+        flag: bet.choice.flag,
+        name: bet.choice.title,
+        points: getPotentialPoints(bet.choice),
+        status: getPickStatus(
+          bet.choice.id,
+          bet.choice.lineId,
+          bet.choice.isPrimaryWin || bet.choice.isSecondaryWin
+        ),
+        choiceId: bet.choice.id,
+        lineId: bet.choice.lineId,
+      }));
+
+      // Find player awards
+      const goldenBootBet = userData.bets.find(
+        (bet) => bet.choice.line.title === "Golden Boot (Top Scorer)"
+      );
+      const goldenBallBet = userData.bets.find(
+        (bet) => bet.choice.line.title === "Golden Ball (Best Player)"
+      );
+      const goldenGloveBet = userData.bets.find(
+        (bet) => bet.choice.line.title === "Golden Glove (Best Goalkeeper)"
+      );
+      const youngPlayerBet = userData.bets.find(
+        (bet) => bet.choice.line.title === "FIFA Young Player Award"
+      );
+
+      const playerAwards = {
+        goldenBoot: goldenBootBet
+          ? {
+              flag: goldenBootBet.choice.flag,
+              name: goldenBootBet.choice.title,
+              points: getPotentialPoints(goldenBootBet.choice),
+              status: getPickStatus(
+                goldenBootBet.choice.id,
+                goldenBootBet.choice.lineId,
+                goldenBootBet.choice.isPrimaryWin ||
+                  goldenBootBet.choice.isSecondaryWin
+              ),
+              choiceId: goldenBootBet.choice.id,
+              lineId: goldenBootBet.choice.lineId,
+            }
+          : null,
+        goldenBall: goldenBallBet
+          ? {
+              flag: goldenBallBet.choice.flag,
+              name: goldenBallBet.choice.title,
+              points: getPotentialPoints(goldenBallBet.choice),
+              status: getPickStatus(
+                goldenBallBet.choice.id,
+                goldenBallBet.choice.lineId,
+                goldenBallBet.choice.isPrimaryWin ||
+                  goldenBallBet.choice.isSecondaryWin
+              ),
+              choiceId: goldenBallBet.choice.id,
+              lineId: goldenBallBet.choice.lineId,
+            }
+          : null,
+        goldenGlove: goldenGloveBet
+          ? {
+              flag: goldenGloveBet.choice.flag,
+              name: goldenGloveBet.choice.title,
+              points: getPotentialPoints(goldenGloveBet.choice),
+              status: getPickStatus(
+                goldenGloveBet.choice.id,
+                goldenGloveBet.choice.lineId,
+                goldenGloveBet.choice.isPrimaryWin ||
+                  goldenGloveBet.choice.isSecondaryWin
+              ),
+              choiceId: goldenGloveBet.choice.id,
+              lineId: goldenGloveBet.choice.lineId,
+            }
+          : null,
+        youngPlayer: youngPlayerBet
+          ? {
+              flag: youngPlayerBet.choice.flag,
+              name: youngPlayerBet.choice.title,
+              points: getPotentialPoints(youngPlayerBet.choice),
+              status: getPickStatus(
+                youngPlayerBet.choice.id,
+                youngPlayerBet.choice.lineId,
+                youngPlayerBet.choice.isPrimaryWin ||
+                  youngPlayerBet.choice.isSecondaryWin
+              ),
+              choiceId: youngPlayerBet.choice.id,
+              lineId: youngPlayerBet.choice.lineId,
+            }
+          : null,
+      };
+
       // Calculate total points
       let totalPoints = 0;
-
-      // Debug: Log all Tunisia bets for this user
-      const tunisiaBets = userData.bets.filter(
-        (bet) => bet.choice.title === "Tunisia"
-      );
-      if (tunisiaBets.length > 0) {
-        console.log(
-          `\n=== Tunisia bets for user ${userData.displayName || userData.name} ===`
-        );
-        tunisiaBets.forEach((bet) => {
-          const choice = bet.choice;
-          let pointsAwarded = 0;
-          if (choice.isPrimaryWin) {
-            pointsAwarded = choice.primaryPoints;
-          } else if (choice.isSecondaryWin) {
-            pointsAwarded = choice.secondaryPoints;
-          }
-          console.log({
-            line: choice.line.title,
-            isPrimaryWin: choice.isPrimaryWin,
-            isSecondaryWin: choice.isSecondaryWin,
-            primaryPoints: choice.primaryPoints,
-            secondaryPoints: choice.secondaryPoints,
-            pointsAwarded: pointsAwarded,
-          });
-        });
-        console.log("=== End Tunisia bets ===\n");
-      }
-
       userData.bets.forEach((bet) => {
         const choice = bet.choice;
         // If primary win, use primary points
@@ -209,6 +377,11 @@ function LeaderboardComponent() {
         finalFour,
         quarterfinals,
         totalPoints,
+        groupWinners,
+        qualifiers,
+        roundOf32,
+        roundOf16,
+        playerAwards,
       });
     });
 
@@ -256,13 +429,16 @@ function LeaderboardComponent() {
                 <p className="text-muted-foreground">No entries yet.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-sm">
+                  <table
+                    className="w-full border-collapse text-sm"
+                    style={{ minWidth: "800px" }}
+                  >
                     <thead>
                       <tr className="border-b bg-muted/50">
+                        <th className="text-left p-3 font-semibold w-10"></th>
                         <th className="text-left p-3 font-semibold">Rank</th>
-                        <th className="text-right p-3 font-semibold">Points</th>
+                        <th className="text-left p-3 font-semibold">Points</th>
                         <th className="text-left p-3 font-semibold">User</th>
-                        <th className="text-left p-3 font-semibold">Email</th>
                         <th className="text-center p-3 font-semibold">
                           Winner
                         </th>
@@ -276,189 +452,734 @@ function LeaderboardComponent() {
                     </thead>
                     <tbody>
                       <TooltipProvider>
-                        {leaderboard.map((entry, index) => (
-                          <tr
-                            key={entry.userId}
-                            className="border-b hover:bg-muted/50 transition-colors"
-                          >
-                            <td className="p-3 font-medium">#{index + 1}</td>
-                            <td className="p-3 text-right font-semibold">
-                              {entry.totalPoints}
-                            </td>
-                            <td className="p-3 font-medium">
-                              {entry.displayName}
-                            </td>
-                            <td className="p-3 text-muted-foreground text-sm">
-                              {entry.email}
-                            </td>
-                            <td className="p-3 text-center">
-                              {entry.champion ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="flex flex-col items-center gap-1 cursor-help">
-                                      <span
-                                        className={`text-2xl ${
-                                          entry.champion.status === "loss"
-                                            ? "line-through text-destructive"
-                                            : entry.champion.status === "win"
-                                              ? "text-green-600"
-                                              : ""
-                                        }`}
-                                      >
-                                        {entry.champion.flag || "-"}
-                                      </span>
-                                      <span
-                                        className={`text-xs ${
-                                          entry.champion.status === "loss"
-                                            ? "line-through text-destructive"
-                                            : entry.champion.status === "win"
-                                              ? "text-green-600"
-                                              : "text-muted-foreground"
-                                        }`}
-                                      >
-                                        {entry.champion.status === "win" && "+"}
-                                        {entry.champion.points}
-                                      </span>
+                        {leaderboard.map((entry, index) => {
+                          const isExpanded = expandedRows.has(entry.userId);
+                          const toggleExpand = () => {
+                            setExpandedRows((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(entry.userId)) {
+                                next.delete(entry.userId);
+                              } else {
+                                next.add(entry.userId);
+                              }
+                              return next;
+                            });
+                          };
+
+                          return (
+                            <>
+                              <tr
+                                key={entry.userId}
+                                className="border-b hover:bg-muted/50 transition-colors"
+                              >
+                                <td className="p-3">
+                                  <button
+                                    onClick={toggleExpand}
+                                    className="p-1 hover:bg-muted rounded transition-colors"
+                                    aria-label={
+                                      isExpanded ? "Collapse row" : "Expand row"
+                                    }
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                </td>
+                                <td className="p-3 font-medium">
+                                  #{index + 1}
+                                </td>
+                                <td className="p-3 text-left font-semibold">
+                                  {entry.totalPoints}
+                                </td>
+                                <td className="p-3 font-medium">
+                                  {entry.displayName}
+                                </td>
+                                <td className="p-3 text-center">
+                                  {entry.champion ? (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="flex flex-col items-center gap-1 cursor-help">
+                                          <span
+                                            className={`text-2xl ${
+                                              entry.champion.status === "loss"
+                                                ? "line-through text-destructive"
+                                                : entry.champion.status ===
+                                                    "win"
+                                                  ? "text-green-600"
+                                                  : ""
+                                            }`}
+                                          >
+                                            {entry.champion.flag || "-"}
+                                          </span>
+                                          <span
+                                            className={`text-xs ${
+                                              entry.champion.status === "loss"
+                                                ? "line-through text-destructive"
+                                                : entry.champion.status ===
+                                                    "win"
+                                                  ? "text-green-600"
+                                                  : "text-muted-foreground"
+                                            }`}
+                                          >
+                                            {entry.champion.status === "win" &&
+                                              "+"}
+                                            {entry.champion.points}
+                                          </span>
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>{entry.champion.name}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  ) : (
+                                    <span className="text-muted-foreground">
+                                      -
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-3 text-center">
+                                  <div className="flex items-start justify-center gap-2">
+                                    {entry.finalFour.length > 0 ? (
+                                      <>
+                                        {entry.finalFour.map((pick, i) => (
+                                          <Tooltip key={i}>
+                                            <TooltipTrigger asChild>
+                                              <div className="flex flex-col items-center gap-1 cursor-help">
+                                                <span
+                                                  className={`text-xl ${
+                                                    pick.status === "loss"
+                                                      ? "line-through text-destructive"
+                                                      : pick.status === "win"
+                                                        ? "text-green-600"
+                                                        : ""
+                                                  }`}
+                                                >
+                                                  {pick.flag || "-"}
+                                                </span>
+                                                <span
+                                                  className={`text-xs ${
+                                                    pick.status === "loss"
+                                                      ? "line-through text-destructive"
+                                                      : pick.status === "win"
+                                                        ? "text-green-600"
+                                                        : "text-muted-foreground"
+                                                  }`}
+                                                >
+                                                  {pick.status === "win" && "+"}
+                                                  {pick.points}
+                                                </span>
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>{pick.name}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        ))}
+                                        {/* Fill empty slots if less than 2 */}
+                                        {Array.from({
+                                          length: 2 - entry.finalFour.length,
+                                        }).map((_, i) => (
+                                          <span
+                                            key={`empty-${i}`}
+                                            className="text-xl text-muted-foreground/30"
+                                          >
+                                            -
+                                          </span>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {Array.from({ length: 2 }).map(
+                                          (_, i) => (
+                                            <span
+                                              key={`empty-${i}`}
+                                              className="text-xl text-muted-foreground/30"
+                                            >
+                                              -
+                                            </span>
+                                          )
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <div className="flex items-start justify-center gap-2 flex-wrap">
+                                    {entry.quarterfinals.length > 0 ? (
+                                      <>
+                                        {entry.quarterfinals.map((pick, i) => (
+                                          <Tooltip key={i}>
+                                            <TooltipTrigger asChild>
+                                              <div className="flex flex-col items-center gap-1 cursor-help">
+                                                <span
+                                                  className={`text-xl ${
+                                                    pick.status === "loss"
+                                                      ? "line-through text-destructive"
+                                                      : pick.status === "win"
+                                                        ? "text-green-600"
+                                                        : ""
+                                                  }`}
+                                                >
+                                                  {pick.flag || "-"}
+                                                </span>
+                                                <span
+                                                  className={`text-xs ${
+                                                    pick.status === "loss"
+                                                      ? "line-through text-destructive"
+                                                      : pick.status === "win"
+                                                        ? "text-green-600"
+                                                        : "text-muted-foreground"
+                                                  }`}
+                                                >
+                                                  {pick.status === "win" && "+"}
+                                                  {pick.points}
+                                                </span>
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>{pick.name}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        ))}
+                                        {/* Fill empty slots if less than 4 */}
+                                        {Array.from({
+                                          length:
+                                            4 - entry.quarterfinals.length,
+                                        }).map((_, i) => (
+                                          <span
+                                            key={`empty-${i}`}
+                                            className="text-xl text-muted-foreground/30"
+                                          >
+                                            -
+                                          </span>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {Array.from({ length: 4 }).map(
+                                          (_, i) => (
+                                            <span
+                                              key={`empty-${i}`}
+                                              className="text-xl text-muted-foreground/30"
+                                            >
+                                              -
+                                            </span>
+                                          )
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr
+                                  key={`${entry.userId}-expanded`}
+                                  className="border-b bg-muted/30"
+                                >
+                                  <td colSpan={7} className="p-4">
+                                    <div className="space-y-4">
+                                      {/* Round of 16 */}
+                                      <div>
+                                        <h4 className="text-sm font-semibold mb-2">
+                                          Final 8
+                                        </h4>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          {entry.roundOf16.length > 0 ? (
+                                            entry.roundOf16.map((pick, i) => (
+                                              <Tooltip key={i}>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex flex-col items-center gap-1 cursor-help">
+                                                    <span
+                                                      className={`text-xl ${
+                                                        pick.status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : pick.status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : ""
+                                                      }`}
+                                                    >
+                                                      {pick.flag || "-"}
+                                                    </span>
+                                                    <span
+                                                      className={`text-xs ${
+                                                        pick.status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : pick.status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {pick.status === "win" &&
+                                                        "+"}
+                                                      {pick.points}
+                                                    </span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>{pick.name}</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            ))
+                                          ) : (
+                                            <span className="text-muted-foreground text-sm">
+                                              No Round of 16 picks
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Round of 32 */}
+                                      <div>
+                                        <h4 className="text-sm font-semibold mb-2">
+                                          Final 16
+                                        </h4>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          {entry.roundOf32.length > 0 ? (
+                                            entry.roundOf32.map((pick, i) => (
+                                              <Tooltip key={i}>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex flex-col items-center gap-1 cursor-help">
+                                                    <span
+                                                      className={`text-xl ${
+                                                        pick.status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : pick.status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : ""
+                                                      }`}
+                                                    >
+                                                      {pick.flag || "-"}
+                                                    </span>
+                                                    <span
+                                                      className={`text-xs ${
+                                                        pick.status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : pick.status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {pick.status === "win" &&
+                                                        "+"}
+                                                      {pick.points}
+                                                    </span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>{pick.name}</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            ))
+                                          ) : (
+                                            <span className="text-muted-foreground text-sm">
+                                              No Round of 32 picks
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Group Winners */}
+                                      <div>
+                                        <h4 className="text-sm font-semibold mb-2">
+                                          Group Winners
+                                        </h4>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          {entry.groupWinners.length > 0 ? (
+                                            entry.groupWinners.map(
+                                              (pick, i) => (
+                                                <Tooltip key={i}>
+                                                  <TooltipTrigger asChild>
+                                                    <div className="flex flex-col items-center gap-1 cursor-help">
+                                                      <span
+                                                        className={`text-xl ${
+                                                          pick.status === "loss"
+                                                            ? "line-through text-destructive"
+                                                            : pick.status ===
+                                                                "win"
+                                                              ? "text-green-600"
+                                                              : ""
+                                                        }`}
+                                                      >
+                                                        {pick.flag || "-"}
+                                                      </span>
+                                                      <span
+                                                        className={`text-xs ${
+                                                          pick.status === "loss"
+                                                            ? "line-through text-destructive"
+                                                            : pick.status ===
+                                                                "win"
+                                                              ? "text-green-600"
+                                                              : "text-muted-foreground"
+                                                        }`}
+                                                      >
+                                                        {pick.status ===
+                                                          "win" && "+"}
+                                                        {pick.points}
+                                                      </span>
+                                                    </div>
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                    <p>{pick.name}</p>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              )
+                                            )
+                                          ) : (
+                                            <span className="text-muted-foreground text-sm">
+                                              No group winners selected
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Qualifiers (Group Winner Secondary + Runners Up + Third Place) */}
+                                      <div>
+                                        <h4 className="text-sm font-semibold mb-2">
+                                          Qualifiers (Runners Up / Third Place
+                                          Qualifers)
+                                        </h4>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          {entry.qualifiers.length > 0 ? (
+                                            entry.qualifiers.map((pick, i) => (
+                                              <Tooltip key={i}>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex flex-col items-center gap-1 cursor-help">
+                                                    <span
+                                                      className={`text-xl ${
+                                                        pick.status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : pick.status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : ""
+                                                      }`}
+                                                    >
+                                                      {pick.flag || "-"}
+                                                    </span>
+                                                    <span
+                                                      className={`text-xs ${
+                                                        pick.status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : pick.status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {pick.status === "win" &&
+                                                        "+"}
+                                                      {pick.points}
+                                                    </span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>{pick.name}</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            ))
+                                          ) : (
+                                            <span className="text-muted-foreground text-sm">
+                                              No qualifiers selected
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Player Awards */}
+                                      <div>
+                                        <h4 className="text-sm font-semibold mb-2">
+                                          Player Awards
+                                        </h4>
+                                        <div className="flex items-center gap-4 flex-wrap">
+                                          {entry.playerAwards.goldenBoot && (
+                                            <div>
+                                              <span className="text-xs text-muted-foreground block mb-1">
+                                                Golden Boot
+                                              </span>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex flex-col items-center gap-1 cursor-help">
+                                                    <span
+                                                      className={`text-xl ${
+                                                        entry.playerAwards
+                                                          .goldenBoot.status ===
+                                                        "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .goldenBoot
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : ""
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .goldenBoot.flag || "-"}
+                                                    </span>
+                                                    <span
+                                                      className={`text-xs ${
+                                                        entry.playerAwards
+                                                          .goldenBoot.status ===
+                                                        "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .goldenBoot
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .goldenBoot.status ===
+                                                        "win" && "+"}
+                                                      {
+                                                        entry.playerAwards
+                                                          .goldenBoot.points
+                                                      }
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground text-center max-w-[80px] truncate">
+                                                      {
+                                                        entry.playerAwards
+                                                          .goldenBoot.name
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>
+                                                    {
+                                                      entry.playerAwards
+                                                        .goldenBoot.name
+                                                    }
+                                                  </p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </div>
+                                          )}
+                                          {entry.playerAwards.goldenBall && (
+                                            <div>
+                                              <span className="text-xs text-muted-foreground block mb-1">
+                                                Golden Ball
+                                              </span>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex flex-col items-center gap-1 cursor-help">
+                                                    <span
+                                                      className={`text-xl ${
+                                                        entry.playerAwards
+                                                          .goldenBall.status ===
+                                                        "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .goldenBall
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : ""
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .goldenBall.flag || "-"}
+                                                    </span>
+                                                    <span
+                                                      className={`text-xs ${
+                                                        entry.playerAwards
+                                                          .goldenBall.status ===
+                                                        "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .goldenBall
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .goldenBall.status ===
+                                                        "win" && "+"}
+                                                      {
+                                                        entry.playerAwards
+                                                          .goldenBall.points
+                                                      }
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground text-center max-w-[80px] truncate">
+                                                      {
+                                                        entry.playerAwards
+                                                          .goldenBall.name
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>
+                                                    {
+                                                      entry.playerAwards
+                                                        .goldenBall.name
+                                                    }
+                                                  </p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </div>
+                                          )}
+                                          {entry.playerAwards.goldenGlove && (
+                                            <div>
+                                              <span className="text-xs text-muted-foreground block mb-1">
+                                                Golden Glove
+                                              </span>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex flex-col items-center gap-1 cursor-help">
+                                                    <span
+                                                      className={`text-xl ${
+                                                        entry.playerAwards
+                                                          .goldenGlove
+                                                          .status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .goldenGlove
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : ""
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .goldenGlove.flag ||
+                                                        "-"}
+                                                    </span>
+                                                    <span
+                                                      className={`text-xs ${
+                                                        entry.playerAwards
+                                                          .goldenGlove
+                                                          .status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .goldenGlove
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .goldenGlove.status ===
+                                                        "win" && "+"}
+                                                      {
+                                                        entry.playerAwards
+                                                          .goldenGlove.points
+                                                      }
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground text-center max-w-[80px] truncate">
+                                                      {
+                                                        entry.playerAwards
+                                                          .goldenGlove.name
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>
+                                                    {
+                                                      entry.playerAwards
+                                                        .goldenGlove.name
+                                                    }
+                                                  </p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </div>
+                                          )}
+                                          {entry.playerAwards.youngPlayer && (
+                                            <div>
+                                              <span className="text-xs text-muted-foreground block mb-1">
+                                                Young Player
+                                              </span>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex flex-col items-center gap-1 cursor-help">
+                                                    <span
+                                                      className={`text-xl ${
+                                                        entry.playerAwards
+                                                          .youngPlayer
+                                                          .status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .youngPlayer
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : ""
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .youngPlayer.flag ||
+                                                        "-"}
+                                                    </span>
+                                                    <span
+                                                      className={`text-xs ${
+                                                        entry.playerAwards
+                                                          .youngPlayer
+                                                          .status === "loss"
+                                                          ? "line-through text-destructive"
+                                                          : entry.playerAwards
+                                                                .youngPlayer
+                                                                .status ===
+                                                              "win"
+                                                            ? "text-green-600"
+                                                            : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {entry.playerAwards
+                                                        .youngPlayer.status ===
+                                                        "win" && "+"}
+                                                      {
+                                                        entry.playerAwards
+                                                          .youngPlayer.points
+                                                      }
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground text-center max-w-[80px] truncate">
+                                                      {
+                                                        entry.playerAwards
+                                                          .youngPlayer.name
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>
+                                                    {
+                                                      entry.playerAwards
+                                                        .youngPlayer.name
+                                                    }
+                                                  </p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </div>
+                                          )}
+                                          {!entry.playerAwards.goldenBoot &&
+                                            !entry.playerAwards.goldenBall &&
+                                            !entry.playerAwards.goldenGlove &&
+                                            !entry.playerAwards.youngPlayer && (
+                                              <span className="text-muted-foreground text-sm">
+                                                No player awards selected
+                                              </span>
+                                            )}
+                                        </div>
+                                      </div>
                                     </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{entry.champion.name}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
+                                  </td>
+                                </tr>
                               )}
-                            </td>
-                            <td className="p-3 text-center">
-                              <div className="flex items-start justify-center gap-2">
-                                {entry.finalFour.length > 0 ? (
-                                  <>
-                                    {entry.finalFour.map((pick, i) => (
-                                      <Tooltip key={i}>
-                                        <TooltipTrigger asChild>
-                                          <div className="flex flex-col items-center gap-1 cursor-help">
-                                            <span
-                                              className={`text-xl ${
-                                                pick.status === "loss"
-                                                  ? "line-through text-destructive"
-                                                  : pick.status === "win"
-                                                    ? "text-green-600"
-                                                    : ""
-                                              }`}
-                                            >
-                                              {pick.flag || "-"}
-                                            </span>
-                                            <span
-                                              className={`text-xs ${
-                                                pick.status === "loss"
-                                                  ? "line-through text-destructive"
-                                                  : pick.status === "win"
-                                                    ? "text-green-600"
-                                                    : "text-muted-foreground"
-                                              }`}
-                                            >
-                                              {pick.status === "win" && "+"}
-                                              {pick.points}
-                                            </span>
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>{pick.name}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    ))}
-                                    {/* Fill empty slots if less than 2 */}
-                                    {Array.from({
-                                      length: 2 - entry.finalFour.length,
-                                    }).map((_, i) => (
-                                      <span
-                                        key={`empty-${i}`}
-                                        className="text-xl text-muted-foreground/30"
-                                      >
-                                        -
-                                      </span>
-                                    ))}
-                                  </>
-                                ) : (
-                                  <>
-                                    {Array.from({ length: 2 }).map((_, i) => (
-                                      <span
-                                        key={`empty-${i}`}
-                                        className="text-xl text-muted-foreground/30"
-                                      >
-                                        -
-                                      </span>
-                                    ))}
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-3 text-center">
-                              <div className="flex items-start justify-center gap-2 flex-wrap">
-                                {entry.quarterfinals.length > 0 ? (
-                                  <>
-                                    {entry.quarterfinals.map((pick, i) => (
-                                      <Tooltip key={i}>
-                                        <TooltipTrigger asChild>
-                                          <div className="flex flex-col items-center gap-1 cursor-help">
-                                            <span
-                                              className={`text-xl ${
-                                                pick.status === "loss"
-                                                  ? "line-through text-destructive"
-                                                  : pick.status === "win"
-                                                    ? "text-green-600"
-                                                    : ""
-                                              }`}
-                                            >
-                                              {pick.flag || "-"}
-                                            </span>
-                                            <span
-                                              className={`text-xs ${
-                                                pick.status === "loss"
-                                                  ? "line-through text-destructive"
-                                                  : pick.status === "win"
-                                                    ? "text-green-600"
-                                                    : "text-muted-foreground"
-                                              }`}
-                                            >
-                                              {pick.status === "win" && "+"}
-                                              {pick.points}
-                                            </span>
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>{pick.name}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    ))}
-                                    {/* Fill empty slots if less than 4 */}
-                                    {Array.from({
-                                      length: 4 - entry.quarterfinals.length,
-                                    }).map((_, i) => (
-                                      <span
-                                        key={`empty-${i}`}
-                                        className="text-xl text-muted-foreground/30"
-                                      >
-                                        -
-                                      </span>
-                                    ))}
-                                  </>
-                                ) : (
-                                  <>
-                                    {Array.from({ length: 4 }).map((_, i) => (
-                                      <span
-                                        key={`empty-${i}`}
-                                        className="text-xl text-muted-foreground/30"
-                                      >
-                                        -
-                                      </span>
-                                    ))}
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                            </>
+                          );
+                        })}
                       </TooltipProvider>
                     </tbody>
                   </table>
