@@ -16,6 +16,8 @@ import userRoutes from "./routes/user.js";
 import linesRoutes from "./routes/lines.js";
 import betsRoutes from "./routes/bets.js";
 import adminRoutes from "./routes/admin.js";
+import settingsRoutes from "./routes/settings.js";
+import leaderboardRoutes from "./routes/leaderboard.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -40,6 +42,12 @@ app.use("/api/bets", betsRoutes);
 
 // Admin routes
 app.use("/api/admin", adminRoutes);
+
+// Settings routes
+app.use("/api/settings", settingsRoutes);
+
+// Leaderboard routes
+app.use("/api/leaderboard", leaderboardRoutes);
 
 // Better Auth middleware - handle all other auth routes
 // Express 5 requires named wildcards

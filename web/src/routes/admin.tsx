@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useAdminUsers, useUpdatePaymentStatus } from "@/lib/admin";
+import { useSettings, useUpdateSettings } from "@/lib/settings";
 import { STEPS } from "@/lib/picks-steps";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { WinStatusConfig } from "@/components/admin/win-status-config";
 
 export const Route = createFileRoute("/admin")({
@@ -22,6 +24,8 @@ function AdminComponent() {
   const { user, signOut } = useAuth();
   const { data: adminData, isLoading, error } = useAdminUsers();
   const updatePaymentStatus = useUpdatePaymentStatus();
+  const { data: settings } = useSettings();
+  const updateSettings = useUpdateSettings();
 
   // Get all step categories (exclude summary)
   const categories = STEPS.filter((step) => step.slug !== "summary");
@@ -74,6 +78,7 @@ function AdminComponent() {
                 <TabsList>
                   <TabsTrigger value="users">Users</TabsTrigger>
                   <TabsTrigger value="results">Results</TabsTrigger>
+                  <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="users" className="mt-4">
@@ -190,6 +195,56 @@ function AdminComponent() {
                 
                 <TabsContent value="results" className="mt-4">
                   <WinStatusConfig />
+                </TabsContent>
+
+                <TabsContent value="settings" className="mt-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Contest Settings</CardTitle>
+                      <CardDescription>
+                        Manage contest-wide settings
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="contestClosed"
+                            checked={settings?.contestClosed ?? false}
+                            onCheckedChange={(checked) => {
+                              if (typeof checked !== "boolean") return;
+                              
+                              console.log("Checkbox changed to:", checked);
+                              updateSettings.mutate(
+                                { contestClosed: checked },
+                                {
+                                  onSuccess: () => {
+                                    console.log("Settings updated successfully");
+                                  },
+                                  onError: (error) => {
+                                    console.error("Failed to update settings:", error);
+                                    alert(`Failed to update settings: ${error.message}`);
+                                  },
+                                }
+                              );
+                            }}
+                            disabled={updateSettings.isPending}
+                          />
+                          <Label
+                            htmlFor="contestClosed"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            Contest Closed
+                          </Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          When the contest is closed, users can see the full
+                          leaderboard with all picks and points. When open, users
+                          can see the leaderboard but without bet details.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </Tabs>
             </CardContent>

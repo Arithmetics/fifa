@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { useAdminUsers } from "@/lib/admin";
+import { useLeaderboard } from "@/lib/leaderboard";
 import { useLines } from "@/lib/lines";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +57,7 @@ type LeaderboardEntry = {
 
 function LeaderboardComponent() {
   const { signOut } = useAuth();
-  const { data: adminData, isLoading } = useAdminUsers();
+  const { data: adminData, isLoading } = useLeaderboard();
   const { data: linesData } = useLines();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 

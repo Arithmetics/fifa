@@ -1,6 +1,6 @@
 import express from "express";
 import { prisma } from "../db.js";
-import { auth } from "../auth.js";
+import { auth, isAdmin } from "../auth.js";
 import { fromNodeHeaders } from "better-auth/node";
 
 const router = express.Router();
@@ -14,6 +14,10 @@ router.get("/users", async (req, res) => {
 
     if (!session?.user) {
       return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!isAdmin(session.user)) {
+      return res.status(403).json({ error: "Forbidden: Admin access required" });
     }
 
     // Get all users with their bets
@@ -175,6 +179,10 @@ router.post("/win-status/update-choice", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    if (!isAdmin(session.user)) {
+      return res.status(403).json({ error: "Forbidden: Admin access required" });
+    }
+
     const { choiceId, isPrimaryWin, isSecondaryWin } = req.body;
 
     if (!choiceId || typeof choiceId !== "string") {
@@ -212,6 +220,10 @@ router.patch("/users/:userId/payment", async (req, res) => {
 
     if (!session?.user) {
       return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!isAdmin(session.user)) {
+      return res.status(403).json({ error: "Forbidden: Admin access required" });
     }
 
     const { userId } = req.params;

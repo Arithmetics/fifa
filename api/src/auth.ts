@@ -31,3 +31,14 @@ export const auth = betterAuth({
     },
   },
 });
+
+const ADMIN_EMAIL = "brock.m.tillotson@gmail.com";
+
+/**
+ * Check if the user from a session is an admin
+ * @param user The user object from the session
+ * @returns true if the user is an admin, false otherwise
+ */
+export function isAdmin(user: { email: string } | null | undefined): boolean {
+  return user?.email === ADMIN_EMAIL;
+}

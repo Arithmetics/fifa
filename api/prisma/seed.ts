@@ -672,11 +672,22 @@ async function main() {
   await prisma.bet.deleteMany();
   await prisma.choice.deleteMany();
   await prisma.line.deleteMany();
-
+  
   // Reset hasPaid for all users
   console.log("💳 Resetting payment status for all users...");
   await prisma.user.updateMany({
     data: { hasPaid: false },
+  });
+
+  // Initialize settings (contestClosed defaults to false)
+  console.log("⚙️  Initializing settings...");
+  await prisma.settings.upsert({
+    where: { key: "contestClosed" },
+    update: {}, // Don't update if it exists
+    create: {
+      key: "contestClosed",
+      value: "false",
+    },
   });
 
   // Create individual group lines
