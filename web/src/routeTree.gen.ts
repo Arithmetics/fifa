@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SetDisplayNameRouteImport } from './routes/set-display-name'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PicksThirdPlaceAdvancersRouteImport } from './routes/picks/third-place-advancers'
@@ -26,6 +27,11 @@ import { Route as PicksChampionshipRouteImport } from './routes/picks/championsh
 const SetDisplayNameRoute = SetDisplayNameRouteImport.update({
   id: '/set-display-name',
   path: '/set-display-name',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -93,6 +99,7 @@ const PicksChampionshipRoute = PicksChampionshipRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/set-display-name': typeof SetDisplayNameRoute
   '/picks/championship': typeof PicksChampionshipRoute
   '/picks/group-runners-up': typeof PicksGroupRunnersUpRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/set-display-name': typeof SetDisplayNameRoute
   '/picks/championship': typeof PicksChampionshipRoute
   '/picks/group-runners-up': typeof PicksGroupRunnersUpRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/set-display-name': typeof SetDisplayNameRoute
   '/picks/championship': typeof PicksChampionshipRoute
   '/picks/group-runners-up': typeof PicksGroupRunnersUpRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/leaderboard'
     | '/set-display-name'
     | '/picks/championship'
     | '/picks/group-runners-up'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/leaderboard'
     | '/set-display-name'
     | '/picks/championship'
     | '/picks/group-runners-up'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/leaderboard'
     | '/set-display-name'
     | '/picks/championship'
     | '/picks/group-runners-up'
@@ -187,6 +199,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   SetDisplayNameRoute: typeof SetDisplayNameRoute
   PicksChampionshipRoute: typeof PicksChampionshipRoute
   PicksGroupRunnersUpRoute: typeof PicksGroupRunnersUpRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/set-display-name'
       fullPath: '/set-display-name'
       preLoaderRoute: typeof SetDisplayNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -299,6 +319,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  LeaderboardRoute: LeaderboardRoute,
   SetDisplayNameRoute: SetDisplayNameRoute,
   PicksChampionshipRoute: PicksChampionshipRoute,
   PicksGroupRunnersUpRoute: PicksGroupRunnersUpRoute,

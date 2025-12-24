@@ -672,7 +672,7 @@ async function main() {
   await prisma.bet.deleteMany();
   await prisma.choice.deleteMany();
   await prisma.line.deleteMany();
-  
+
   // Reset hasPaid for all users
   console.log("💳 Resetting payment status for all users...");
   await prisma.user.updateMany({
@@ -845,8 +845,8 @@ async function main() {
         lineId,
         title: country.name,
         flag: country.flag,
-        primaryPoints: 0,
-        secondaryPoints: country.qualifyPoints,
+        primaryPoints: country.qualifyPoints,
+        secondaryPoints: 0,
         isPrimaryWin: false,
         isSecondaryWin: false,
       })),
@@ -861,8 +861,8 @@ async function main() {
         lineId,
         title: country.name,
         flag: country.flag,
-        primaryPoints: 0,
-        secondaryPoints: country.qualifyPoints,
+        primaryPoints: country.qualifyPoints,
+        secondaryPoints: 0,
         isPrimaryWin: false,
         isSecondaryWin: false,
       })),
@@ -872,127 +872,127 @@ async function main() {
   // Create Choices for Round of 32 - all countries available
   console.log("🎯 Creating round of 32 choices...");
   await prisma.choice.createMany({
-      data: COUNTRIES.map((country) => ({
-        lineId: roundOf32Line.id,
-        title: country.name,
-        flag: country.flag,
-        primaryPoints: 0,
-        secondaryPoints: country.roundOf32Points,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: COUNTRIES.map((country) => ({
+      lineId: roundOf32Line.id,
+      title: country.name,
+      flag: country.flag,
+      primaryPoints: country.roundOf32Points,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Round of 16 - all countries available
   console.log("🎯 Creating round of 16 choices...");
   await prisma.choice.createMany({
-      data: COUNTRIES.map((country) => ({
-        lineId: roundOf16Line.id,
-        title: country.name,
-        flag: country.flag,
-        primaryPoints: 0,
-        secondaryPoints: country.roundOf16Points,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: COUNTRIES.map((country) => ({
+      lineId: roundOf16Line.id,
+      title: country.name,
+      flag: country.flag,
+      primaryPoints: country.roundOf16Points,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Quarterfinals - all countries available
   console.log("🎯 Creating quarterfinals choices...");
   await prisma.choice.createMany({
-      data: COUNTRIES.map((country) => ({
-        lineId: quarterfinalsLine.id,
-        title: country.name,
-        flag: country.flag,
-        primaryPoints: 0,
-        secondaryPoints: country.quarterfinalsPoints,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: COUNTRIES.map((country) => ({
+      lineId: quarterfinalsLine.id,
+      title: country.name,
+      flag: country.flag,
+      primaryPoints: country.quarterfinalsPoints,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Semifinals - all countries available
   console.log("🎯 Creating semifinals choices...");
   await prisma.choice.createMany({
-      data: COUNTRIES.map((country) => ({
-        lineId: semifinalsLine.id,
-        title: country.name,
-        flag: country.flag,
-        primaryPoints: 0,
-        secondaryPoints: country.semifinalsPoints,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: COUNTRIES.map((country) => ({
+      lineId: semifinalsLine.id,
+      title: country.name,
+      flag: country.flag,
+      primaryPoints: country.semifinalsPoints,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Championship - all countries available (primary points for winner)
   console.log("🏆 Creating championship choices...");
   await prisma.choice.createMany({
-      data: COUNTRIES.map((country) => ({
-        lineId: championshipLine.id,
-        title: country.name,
-        flag: country.flag,
-        primaryPoints: country.championshipPoints,
-        secondaryPoints: 0,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: COUNTRIES.map((country) => ({
+      lineId: championshipLine.id,
+      title: country.name,
+      flag: country.flag,
+      primaryPoints: country.championshipPoints,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Golden Boot
   console.log("⚽ Creating golden boot choices...");
   await prisma.choice.createMany({
-      data: GOLDEN_BOOT_PLAYERS.map((player) => ({
-        lineId: goldenBootLine.id,
-        title: player.name,
-        flag: player.flag,
-        primaryPoints: player.points,
-        secondaryPoints: 0,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: GOLDEN_BOOT_PLAYERS.map((player) => ({
+      lineId: goldenBootLine.id,
+      title: player.name,
+      flag: player.flag,
+      primaryPoints: player.points,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Golden Ball
   console.log("⚽ Creating golden ball choices...");
   await prisma.choice.createMany({
-      data: GOLDEN_BALL_PLAYERS.map((player) => ({
-        lineId: goldenBallLine.id,
-        title: player.name,
-        flag: player.flag,
-        primaryPoints: player.points,
-        secondaryPoints: 0,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: GOLDEN_BALL_PLAYERS.map((player) => ({
+      lineId: goldenBallLine.id,
+      title: player.name,
+      flag: player.flag,
+      primaryPoints: player.points,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Golden Glove
   console.log("🧤 Creating golden glove choices...");
   await prisma.choice.createMany({
-      data: GOLDEN_GLOVE_PLAYERS.map((player) => ({
-        lineId: goldenGloveLine.id,
-        title: player.name,
-        flag: player.flag,
-        primaryPoints: player.points,
-        secondaryPoints: 0,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: GOLDEN_GLOVE_PLAYERS.map((player) => ({
+      lineId: goldenGloveLine.id,
+      title: player.name,
+      flag: player.flag,
+      primaryPoints: player.points,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   // Create Choices for Young Player Award
   console.log("🌟 Creating young player award choices...");
   await prisma.choice.createMany({
-      data: YOUNG_PLAYER_PLAYERS.map((player) => ({
-        lineId: youngPlayerLine.id,
-        title: player.name,
-        flag: player.flag,
-        primaryPoints: player.points,
-        secondaryPoints: 0,
-        isPrimaryWin: false,
-        isSecondaryWin: false,
-      })),
+    data: YOUNG_PLAYER_PLAYERS.map((player) => ({
+      lineId: youngPlayerLine.id,
+      title: player.name,
+      flag: player.flag,
+      primaryPoints: player.points,
+      secondaryPoints: 0,
+      isPrimaryWin: false,
+      isSecondaryWin: false,
+    })),
   });
 
   console.log("✅ Database seed completed successfully!");

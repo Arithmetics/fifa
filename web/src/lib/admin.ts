@@ -5,6 +5,26 @@ export type PickStatus = {
   current: number;
 };
 
+export type UserBet = {
+  id: string;
+  choiceId: string;
+  choice: {
+    id: string;
+    lineId: string;
+    title: string;
+    flag: string | null;
+    primaryPoints: number;
+    secondaryPoints: number;
+    isPrimaryWin: boolean;
+    isSecondaryWin: boolean;
+    line: {
+      id: string;
+      title: string;
+      collection: string[];
+    };
+  };
+};
+
 export type UserWithPickStatus = {
   id: string;
   name: string;
@@ -14,6 +34,7 @@ export type UserWithPickStatus = {
   createdAt: string;
   pickStatus: Record<string, PickStatus>;
   allComplete: boolean;
+  bets: UserBet[];
 };
 
 export type AdminUsersResponse = {

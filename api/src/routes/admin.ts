@@ -135,6 +135,25 @@ router.get("/users", async (req, res) => {
         createdAt: user.createdAt,
         pickStatus,
         allComplete,
+        bets: user.bets.map((bet) => ({
+          id: bet.id,
+          choiceId: bet.choiceId,
+          choice: {
+            id: bet.choice.id,
+            lineId: bet.choice.lineId,
+            title: bet.choice.title,
+            flag: bet.choice.flag,
+            primaryPoints: bet.choice.primaryPoints,
+            secondaryPoints: bet.choice.secondaryPoints,
+            isPrimaryWin: bet.choice.isPrimaryWin,
+            isSecondaryWin: bet.choice.isSecondaryWin,
+            line: {
+              id: bet.choice.line.id,
+              title: bet.choice.line.title,
+              collection: bet.choice.line.collection,
+            },
+          },
+        })),
       };
     });
 

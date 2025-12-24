@@ -48,6 +48,11 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">🌍 World Cup 2026 ⚽</h1>
             <div className="flex items-center gap-2">
+              <Link to="/leaderboard">
+                <Button variant="outline" size="sm">
+                  Leaderboard
+                </Button>
+              </Link>
               <Link to="/admin">
                 <Button variant="outline" size="sm">
                   Admin
