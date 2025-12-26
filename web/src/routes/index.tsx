@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomeComponent() {
-  const { user, signIn, signOut } = useAuth();
+  const { user, signIn } = useAuth();
   const navigate = useNavigate();
   const { data: betsData } = useBets();
   const { data: settings } = useSettings();
@@ -52,11 +52,11 @@ function HomeComponent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 pt-32">
       <div className="w-full max-w-2xl space-y-8 text-center">
         {/* Main Title */}
         <div className="space-y-4">
-          <h1 className="text-6xl md:text-7xl font-bold tracking-tight">
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
             🌍 World Cup 2026 ⚽
           </h1>
           <p className="text-xl text-muted-foreground">
@@ -102,6 +102,14 @@ function HomeComponent() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Footer */}
+      <footer className="mt-auto pt-8">
+        <div className="flex flex-col items-center justify-center gap-2 text-sm">
+          <span style={{ color: "#3301ff" }}>powered by btbets</span>
+          <img src="/bt-bets-icon.png" alt="btbets" className="h-16 w-auto" />
+        </div>
+      </footer>
     </div>
   );
 }
