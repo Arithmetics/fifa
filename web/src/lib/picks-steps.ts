@@ -9,6 +9,12 @@ export type StepConfig = {
 
 export const STEPS: StepConfig[] = [
   {
+    slug: "display-name",
+    name: "Display Name",
+    description:
+      "Choose a display name that will be shown on the leaderboard. This can be different from your Google name.",
+  },
+  {
     slug: "group-winners",
     name: "Group Winners",
     description:

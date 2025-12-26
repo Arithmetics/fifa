@@ -26,9 +26,16 @@ router.post("/display-name", async (req, res) => {
       return res.status(400).json({ error: "Display name is required" });
     }
 
+    const trimmedName = displayName.trim();
+    if (trimmedName.length < 3 || trimmedName.length > 26) {
+      return res.status(400).json({
+        error: "Display name must be between 3 and 26 characters",
+      });
+    }
+
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data: { displayName: displayName.trim() },
+      data: { displayName: trimmedName },
     });
 
     res.json({ user });

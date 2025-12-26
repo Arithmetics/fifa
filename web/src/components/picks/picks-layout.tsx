@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getStepBySlug } from "@/lib/picks-steps";
+import { getStepBySlug, STEPS } from "@/lib/picks-steps";
 
 type PicksLayoutProps = {
   slug: string;
@@ -48,7 +48,10 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
   // Validate step slug (only if we're not redirecting)
   useEffect(() => {
     if (!currentStep) {
-      navigate({ to: "/picks/group-winners" as any });
+      const firstStep = STEPS.find((s) => s.slug !== "summary");
+      if (firstStep) {
+        navigate({ to: `/picks/${firstStep.slug}` as any });
+      }
     }
   }, [currentStep, navigate]);
 

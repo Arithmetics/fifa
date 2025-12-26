@@ -22,6 +22,7 @@ import { Route as PicksQuarterfinalsRouteImport } from './routes/picks/quarterfi
 import { Route as PicksPlayerPicksRouteImport } from './routes/picks/player-picks'
 import { Route as PicksGroupWinnersRouteImport } from './routes/picks/group-winners'
 import { Route as PicksGroupRunnersUpRouteImport } from './routes/picks/group-runners-up'
+import { Route as PicksDisplayNameRouteImport } from './routes/picks/display-name'
 import { Route as PicksChampionshipRouteImport } from './routes/picks/championship'
 
 const SetDisplayNameRoute = SetDisplayNameRouteImport.update({
@@ -90,6 +91,11 @@ const PicksGroupRunnersUpRoute = PicksGroupRunnersUpRouteImport.update({
   path: '/picks/group-runners-up',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PicksDisplayNameRoute = PicksDisplayNameRouteImport.update({
+  id: '/picks/display-name',
+  path: '/picks/display-name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PicksChampionshipRoute = PicksChampionshipRouteImport.update({
   id: '/picks/championship',
   path: '/picks/championship',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/set-display-name': typeof SetDisplayNameRoute
   '/picks/championship': typeof PicksChampionshipRoute
+  '/picks/display-name': typeof PicksDisplayNameRoute
   '/picks/group-runners-up': typeof PicksGroupRunnersUpRoute
   '/picks/group-winners': typeof PicksGroupWinnersRoute
   '/picks/player-picks': typeof PicksPlayerPicksRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/set-display-name': typeof SetDisplayNameRoute
   '/picks/championship': typeof PicksChampionshipRoute
+  '/picks/display-name': typeof PicksDisplayNameRoute
   '/picks/group-runners-up': typeof PicksGroupRunnersUpRoute
   '/picks/group-winners': typeof PicksGroupWinnersRoute
   '/picks/player-picks': typeof PicksPlayerPicksRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/set-display-name': typeof SetDisplayNameRoute
   '/picks/championship': typeof PicksChampionshipRoute
+  '/picks/display-name': typeof PicksDisplayNameRoute
   '/picks/group-runners-up': typeof PicksGroupRunnersUpRoute
   '/picks/group-winners': typeof PicksGroupWinnersRoute
   '/picks/player-picks': typeof PicksPlayerPicksRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/set-display-name'
     | '/picks/championship'
+    | '/picks/display-name'
     | '/picks/group-runners-up'
     | '/picks/group-winners'
     | '/picks/player-picks'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/set-display-name'
     | '/picks/championship'
+    | '/picks/display-name'
     | '/picks/group-runners-up'
     | '/picks/group-winners'
     | '/picks/player-picks'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/set-display-name'
     | '/picks/championship'
+    | '/picks/display-name'
     | '/picks/group-runners-up'
     | '/picks/group-winners'
     | '/picks/player-picks'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   SetDisplayNameRoute: typeof SetDisplayNameRoute
   PicksChampionshipRoute: typeof PicksChampionshipRoute
+  PicksDisplayNameRoute: typeof PicksDisplayNameRoute
   PicksGroupRunnersUpRoute: typeof PicksGroupRunnersUpRoute
   PicksGroupWinnersRoute: typeof PicksGroupWinnersRoute
   PicksPlayerPicksRoute: typeof PicksPlayerPicksRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PicksGroupRunnersUpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/picks/display-name': {
+      id: '/picks/display-name'
+      path: '/picks/display-name'
+      fullPath: '/picks/display-name'
+      preLoaderRoute: typeof PicksDisplayNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/picks/championship': {
       id: '/picks/championship'
       path: '/picks/championship'
@@ -322,6 +342,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   SetDisplayNameRoute: SetDisplayNameRoute,
   PicksChampionshipRoute: PicksChampionshipRoute,
+  PicksDisplayNameRoute: PicksDisplayNameRoute,
   PicksGroupRunnersUpRoute: PicksGroupRunnersUpRoute,
   PicksGroupWinnersRoute: PicksGroupWinnersRoute,
   PicksPlayerPicksRoute: PicksPlayerPicksRoute,

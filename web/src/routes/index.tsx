@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { useEffect } from "react";
 import { useBets } from "@/lib/bets";
+import { STEPS } from "@/lib/picks-steps";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
@@ -42,7 +43,10 @@ function HomeComponent() {
     if (hasBets) {
       navigate({ to: "/picks/summary" });
     } else {
-      navigate({ to: "/picks/group-winners" });
+      const firstStep = STEPS.find((s) => s.slug !== "summary");
+      if (firstStep) {
+        navigate({ to: `/picks/${firstStep.slug}` });
+      }
     }
   }, [user, betsData, settings, isAdmin, navigate]);
 
@@ -60,7 +64,7 @@ function HomeComponent() {
             🌍 World Cup 2026 ⚽
           </h1>
           <p className="text-xl text-muted-foreground">
-            The ultimate football experience
+            The best World Cup contest on the planet
           </p>
         </div>
 
@@ -69,8 +73,7 @@ function HomeComponent() {
           <CardHeader>
             <h2 className="text-2xl font-semibold">Get Started</h2>
             <CardDescription>
-              Sign in with your Google account to join the World Cup 2026
-              experience
+              Sign in with your Google account to get started
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -41,6 +41,7 @@ export function StepFooter({
   const handlePrevious = () => {
     if (previousStep) {
       const routeMap: Record<string, string> = {
+        "display-name": "/picks/display-name",
         "group-winners": "/picks/group-winners",
         "group-runners-up": "/picks/group-runners-up",
         "third-place-advancers": "/picks/third-place-advancers",
@@ -66,6 +67,7 @@ export function StepFooter({
       await onSubmit();
       // Only navigate if submission succeeded
       const routeMap: Record<string, string> = {
+        "display-name": "/picks/display-name",
         "group-winners": "/picks/group-winners",
         "group-runners-up": "/picks/group-runners-up",
         "third-place-advancers": "/picks/third-place-advancers",

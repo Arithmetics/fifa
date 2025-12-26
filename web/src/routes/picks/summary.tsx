@@ -4,6 +4,7 @@ import { PicksSummary } from "@/components/picks/picks-summary";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import { Edit } from "lucide-react";
+import { STEPS } from "@/lib/picks-steps";
 
 export const Route = createFileRoute("/picks/summary")({
   component: SummaryPage,
@@ -13,7 +14,10 @@ function SummaryPage() {
   const navigate = useNavigate();
 
   const handleEdit = () => {
-    navigate({ to: "/picks/group-winners" as any });
+    const firstStep = STEPS.find((s) => s.slug !== "summary");
+    if (firstStep) {
+      navigate({ to: `/picks/${firstStep.slug}` as any });
+    }
   };
 
   return (

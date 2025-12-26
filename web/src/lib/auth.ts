@@ -63,7 +63,6 @@ export function useAuth() {
   };
 
   const setDisplayName = async (displayName: string) => {
-    // This will need to be implemented as an API endpoint
     const response = await fetch("/api/auth/user/display-name", {
       method: "POST",
       headers: {
@@ -74,7 +73,8 @@ export function useAuth() {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to set display name");
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to set display name");
     }
 
     // Don't optimistically update - just invalidate and let it refetch
