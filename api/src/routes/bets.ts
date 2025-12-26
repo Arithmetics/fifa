@@ -5,6 +5,16 @@ import { fromNodeHeaders } from "better-auth/node";
 
 const router = express.Router();
 
+const CONTEST_CLOSED_KEY = "contestClosed";
+
+// Helper function to check if contest is closed
+async function isContestClosed(): Promise<boolean> {
+  const setting = await prisma.settings.findUnique({
+    where: { key: CONTEST_CLOSED_KEY },
+  });
+  return setting?.value === "true";
+}
+
 // Get all bets for the logged-in user
 router.get("/", async (req, res) => {
   try {
@@ -48,6 +58,13 @@ router.post("/", async (req, res) => {
 
     if (!session?.user) {
       return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Check if contest is closed - if so, prevent bet creation/deletion
+    if (await isContestClosed()) {
+      return res.status(403).json({
+        error: "Contest is closed. Bets cannot be modified.",
+      });
     }
 
     const { choiceIds } = req.body;

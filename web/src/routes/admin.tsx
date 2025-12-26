@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { useAdminUsers, useUpdatePaymentStatus } from "@/lib/admin";
+import { useAdminUsers, useUpdatePaymentStatus, isAdminUser } from "@/lib/admin";
 import { useSettings, useUpdateSettings } from "@/lib/settings";
 import { STEPS } from "@/lib/picks-steps";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ function AdminComponent() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
+  const isAdmin = isAdminUser(user);
+
   // Get all step categories (exclude summary)
   const categories = STEPS.filter((step) => step.slug !== "summary");
 
@@ -52,11 +54,6 @@ function AdminComponent() {
               <Link to="/leaderboard">
                 <Button variant="outline" size="sm">
                   Leaderboard
-                </Button>
-              </Link>
-              <Link to="/admin">
-                <Button variant="outline" size="sm">
-                  Admin
                 </Button>
               </Link>
               <Button onClick={signOut} variant="outline" size="sm">

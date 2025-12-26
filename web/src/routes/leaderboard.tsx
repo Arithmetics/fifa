@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useLeaderboard } from "@/lib/leaderboard";
 import { useLines } from "@/lib/lines";
+import { isAdminUser } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/leaderboard")({
@@ -56,10 +57,12 @@ type LeaderboardEntry = {
 };
 
 function LeaderboardComponent() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { data: adminData, isLoading } = useLeaderboard();
   const { data: linesData } = useLines();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const isAdmin = isAdminUser(user);
 
   // Calculate leaderboard entries
   const leaderboard = useMemo(() => {
@@ -399,16 +402,13 @@ function LeaderboardComponent() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">🌍 World Cup 2026 ⚽</h1>
             <div className="flex items-center gap-2">
-              <Link to="/leaderboard">
-                <Button variant="outline" size="sm">
-                  Leaderboard
-                </Button>
-              </Link>
-              <Link to="/admin">
-                <Button variant="outline" size="sm">
-                  Admin
-                </Button>
-              </Link>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="outline" size="sm">
+                    Admin
+                  </Button>
+                </Link>
+              )}
               <Button onClick={signOut} variant="outline" size="sm">
                 Sign Out
               </Button>
@@ -467,9 +467,8 @@ function LeaderboardComponent() {
                           };
 
                           return (
-                            <>
+                            <Fragment key={entry.userId}>
                               <tr
-                                key={entry.userId}
                                 className="border-b hover:bg-muted/50 transition-colors"
                               >
                                 <td className="p-3">
@@ -675,7 +674,6 @@ function LeaderboardComponent() {
                               </tr>
                               {isExpanded && (
                                 <tr
-                                  key={`${entry.userId}-expanded`}
                                   className="border-b bg-muted/30"
                                 >
                                   <td colSpan={7} className="p-4">
@@ -1177,7 +1175,7 @@ function LeaderboardComponent() {
                                   </td>
                                 </tr>
                               )}
-                            </>
+                            </Fragment>
                           );
                         })}
                       </TooltipProvider>

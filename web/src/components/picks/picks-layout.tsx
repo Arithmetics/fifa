@@ -1,6 +1,8 @@
 import { ReactNode, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useNavigate, Link } from "@tanstack/react-router";
+import { useSettings } from "@/lib/settings";
+import { isAdminUser } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,8 +21,10 @@ type PicksLayoutProps = {
 export function PicksLayout({ slug, children }: PicksLayoutProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: settings, isLoading: settingsLoading } = useSettings();
 
   const currentStep = getStepBySlug(slug);
+  const isAdmin = isAdminUser(user);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -29,14 +33,32 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
     }
   }, [user, navigate]);
 
-  // Validate step slug
+  // Redirect to leaderboard if contest is closed (but not for admin users)
+  // This should run after settings are loaded
+  useEffect(() => {
+    if (!user || settingsLoading || !settings) {
+      return;
+    }
+    if (settings.contestClosed && !isAdmin) {
+      console.log("Redirecting to leaderboard - contest is closed");
+      navigate({ to: "/leaderboard", replace: true });
+    }
+  }, [user, settings, settingsLoading, isAdmin, navigate]);
+
+  // Validate step slug (only if we're not redirecting)
   useEffect(() => {
     if (!currentStep) {
       navigate({ to: "/picks/group-winners" as any });
     }
   }, [currentStep, navigate]);
 
-  if (!user || !currentStep) {
+  // Don't render if not logged in, settings are loading, or we're redirecting
+  if (!user || !currentStep || settingsLoading) {
+    return null;
+  }
+
+  // Don't render if contest is closed and user is not admin (redirect will happen)
+  if (settings && settings.contestClosed && !isAdmin) {
     return null;
   }
 
@@ -48,16 +70,13 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">🌍 World Cup 2026 ⚽</h1>
             <div className="flex items-center gap-2">
-              <Link to="/leaderboard">
-                <Button variant="outline" size="sm">
-                  Leaderboard
-                </Button>
-              </Link>
-              <Link to="/admin">
-                <Button variant="outline" size="sm">
-                  Admin
-                </Button>
-              </Link>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="outline" size="sm">
+                    Admin
+                  </Button>
+                </Link>
+              )}
               <Button onClick={signOut} variant="outline" size="sm">
                 Sign Out
               </Button>

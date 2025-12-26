@@ -1,5 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+const ADMIN_EMAIL = "brock.m.tillotson@gmail.com";
+
+/**
+ * Check if a user is an admin based on their email
+ */
+export function isAdminUser(user: { email: string } | null | undefined): boolean {
+  return user?.email === ADMIN_EMAIL;
+}
+
 export type PickStatus = {
   required: number;
   current: number;

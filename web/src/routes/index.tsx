@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
+import { useSettings } from "@/lib/settings";
+import { isAdminUser } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,18 +20,31 @@ function HomeComponent() {
   const { user, signIn, signOut } = useAuth();
   const navigate = useNavigate();
   const { data: betsData } = useBets();
+  const { data: settings } = useSettings();
+
+  const isAdmin = isAdminUser(user);
 
   // Redirect logged in users to picks or summary if they have bets
+  // But if contest is closed and user is not admin, redirect to leaderboard
   useEffect(() => {
-    if (user && betsData !== undefined) {
-      const hasBets = betsData?.bets && betsData.bets.length > 0;
-      if (hasBets) {
-        navigate({ to: "/picks/summary" });
-      } else {
-        navigate({ to: "/picks/group-winners" });
-      }
+    if (!user || betsData === undefined || settings === undefined) {
+      return;
     }
-  }, [user, betsData, navigate]);
+
+    // If contest is closed and user is not admin, go to leaderboard
+    if (settings.contestClosed && !isAdmin) {
+      navigate({ to: "/leaderboard" });
+      return;
+    }
+
+    // Otherwise, go to picks flow
+    const hasBets = betsData?.bets && betsData.bets.length > 0;
+    if (hasBets) {
+      navigate({ to: "/picks/summary" });
+    } else {
+      navigate({ to: "/picks/group-winners" });
+    }
+  }, [user, betsData, settings, isAdmin, navigate]);
 
   // Show login page if not logged in
   if (user) {
