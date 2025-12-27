@@ -10,7 +10,7 @@ export function DisplayNameComponent() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Prepopulate with user's name (Google name) or existing displayName
+  // Populate form with user's displayName if they have one, otherwise use Google name
   useEffect(() => {
     if (user) {
       setDisplayNameValue(user.displayName || user.name || "");
@@ -80,11 +80,7 @@ export function DisplayNameComponent() {
           />
           <p className="text-sm text-muted-foreground">
             {trimmedName.length > 0 && (
-              <span
-                className={
-                  isValid ? "text-green-600" : "text-destructive"
-                }
-              >
+              <span className={isValid ? "text-green-600" : "text-destructive"}>
                 {trimmedName.length} / 26 characters
               </span>
             )}
@@ -105,4 +101,3 @@ export function DisplayNameComponent() {
     </>
   );
 }
-

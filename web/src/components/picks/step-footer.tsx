@@ -121,14 +121,18 @@ export function StepFooter({
             </div>
           )}
           <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={!previousStep || isSubmitting}
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Previous
-            </Button>
+            {previousStep ? (
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={isSubmitting}
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Previous
+              </Button>
+            ) : (
+              <div /> // Placeholder to maintain layout
+            )}
 
             <span className="text-sm text-muted-foreground">
               Step {stepIndex + 1} of{" "}

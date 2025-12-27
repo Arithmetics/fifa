@@ -45,7 +45,25 @@ export function useAuth() {
     },
   });
 
-  const user = session?.user;
+  // Fetch user with displayName from our custom endpoint
+  const { data: userData } = useQuery<UserWithDisplayName | null>({
+    queryKey: ["auth", "user"],
+    queryFn: async () => {
+      if (!session?.user) return null;
+      const response = await fetch("/api/auth/user", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        if (response.status === 401) return null;
+        throw new Error("Failed to fetch user");
+      }
+      const data = await response.json();
+      return data.user as UserWithDisplayName;
+    },
+    enabled: !!session?.user,
+  });
+
+  const user = userData || session?.user;
 
   const signIn = async (provider: "google") => {
     if (provider === "google") {
@@ -80,6 +98,7 @@ export function useAuth() {
     // Don't optimistically update - just invalidate and let it refetch
     // This prevents race conditions with navigation
     queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
+    queryClient.invalidateQueries({ queryKey: ["auth", "user"] });
   };
 
   return {
