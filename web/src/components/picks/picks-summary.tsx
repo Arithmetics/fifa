@@ -291,7 +291,13 @@ export function PicksSummary() {
       {/* Bracket Summary - Most Important First */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Championship */}
-        <Card>
+        <Card
+          style={{
+            backgroundColor: "rgb(22, 24, 28)",
+            borderTopColor: "rgb(68, 68, 71)",
+            borderTopWidth: "1px",
+          }}
+        >
           <CardHeader>
             <CardTitle className="text-base">Championship</CardTitle>
           </CardHeader>
@@ -370,7 +376,13 @@ export function PicksSummary() {
         </Card>
 
         {/* Semifinals */}
-        <Card>
+        <Card
+          style={{
+            backgroundColor: "rgb(22, 24, 28)",
+            borderTopColor: "rgb(68, 68, 71)",
+            borderTopWidth: "1px",
+          }}
+        >
           <CardHeader>
             <CardTitle className="text-base">Semifinals</CardTitle>
           </CardHeader>
@@ -449,7 +461,13 @@ export function PicksSummary() {
         </Card>
 
         {/* Quarterfinals */}
-        <Card>
+        <Card
+          style={{
+            backgroundColor: "rgb(22, 24, 28)",
+            borderTopColor: "rgb(68, 68, 71)",
+            borderTopWidth: "1px",
+          }}
+        >
           <CardHeader>
             <CardTitle className="text-base">Quarterfinals</CardTitle>
           </CardHeader>
@@ -529,7 +547,13 @@ export function PicksSummary() {
         </Card>
 
         {/* Round of 16 */}
-        <Card>
+        <Card
+          style={{
+            backgroundColor: "rgb(22, 24, 28)",
+            borderTopColor: "rgb(68, 68, 71)",
+            borderTopWidth: "1px",
+          }}
+        >
           <CardHeader>
             <CardTitle className="text-base">Round of 16</CardTitle>
           </CardHeader>
@@ -609,7 +633,13 @@ export function PicksSummary() {
 
         {/* Round of 32 - More columns since it has many matchups */}
         <div className="col-span-full">
-          <Card>
+          <Card
+            style={{
+              backgroundColor: "rgb(22, 24, 28)",
+              borderTopColor: "rgb(68, 68, 71)",
+              borderTopWidth: "1px",
+            }}
+          >
             <CardHeader>
               <CardTitle className="text-base">Round of 32</CardTitle>
             </CardHeader>
@@ -691,7 +721,13 @@ export function PicksSummary() {
       </div>
 
       {/* Player Awards Summary */}
-      <Card>
+      <Card
+        style={{
+          backgroundColor: "rgb(22, 24, 28)",
+          borderTopColor: "rgb(68, 68, 71)",
+          borderTopWidth: "1px",
+        }}
+      >
         <CardHeader>
           <CardTitle>Player Awards</CardTitle>
         </CardHeader>
@@ -737,7 +773,13 @@ export function PicksSummary() {
       </Card>
 
       {/* Group Stage Summary - Compact */}
-      <Card>
+      <Card
+        style={{
+          backgroundColor: "rgb(22, 24, 28)",
+          borderTopColor: "rgb(68, 68, 71)",
+          borderTopWidth: "1px",
+        }}
+      >
         <CardHeader>
           <CardTitle>Group Stage</CardTitle>
         </CardHeader>

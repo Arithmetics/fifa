@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { useAdminUsers, useUpdatePaymentStatus, isAdminUser } from "@/lib/admin";
+import {
+  useAdminUsers,
+  useUpdatePaymentStatus,
+  isAdminUser,
+} from "@/lib/admin";
 import { useSettings, useUpdateSettings } from "@/lib/settings";
 import { STEPS } from "@/lib/picks-steps";
 import { Button } from "@/components/ui/button";
@@ -32,7 +36,10 @@ function AdminComponent() {
   // Get all step categories (exclude summary)
   const categories = STEPS.filter((step) => step.slug !== "summary");
 
-  const handlePaymentToggle = async (userId: string, currentStatus: boolean) => {
+  const handlePaymentToggle = async (
+    userId: string,
+    currentStatus: boolean
+  ) => {
     try {
       await updatePaymentStatus.mutateAsync({
         userId,
@@ -49,7 +56,7 @@ function AdminComponent() {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header with Title and Logout */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">🌍 World Cup 2026 ⚽</h1>
+            <h1 className="text-2xl font-bold">World Cup Cash 2026 🌍 🏆 💵</h1>
             <div className="flex items-center gap-2">
               <Link to="/leaderboard">
                 <Button variant="outline" size="sm">
@@ -77,13 +84,14 @@ function AdminComponent() {
                   <TabsTrigger value="results">Results</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="users" className="mt-4">
                   {isLoading ? (
                     <p className="text-muted-foreground">Loading users...</p>
                   ) : error ? (
                     <p className="text-destructive">
-                      Error loading users: {error instanceof Error ? error.message : "Unknown error"}
+                      Error loading users:{" "}
+                      {error instanceof Error ? error.message : "Unknown error"}
                     </p>
                   ) : adminData ? (
                     <div className="overflow-x-auto">
@@ -93,8 +101,12 @@ function AdminComponent() {
                             <th className="text-left p-3 font-semibold sticky left-0 bg-background">
                               User
                             </th>
-                            <th className="text-left p-3 font-semibold">Email</th>
-                            <th className="text-center p-3 font-semibold">Paid</th>
+                            <th className="text-left p-3 font-semibold">
+                              Email
+                            </th>
+                            <th className="text-center p-3 font-semibold">
+                              Paid
+                            </th>
                             {categories.map((category) => (
                               <th
                                 key={category.slug}
@@ -104,7 +116,9 @@ function AdminComponent() {
                                 {category.name}
                               </th>
                             ))}
-                            <th className="text-center p-3 font-semibold">Status</th>
+                            <th className="text-center p-3 font-semibold">
+                              Status
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -143,7 +157,10 @@ function AdminComponent() {
                                   const status = user.pickStatus[category.slug];
                                   if (!status) {
                                     return (
-                                      <td key={category.slug} className="p-3 text-center">
+                                      <td
+                                        key={category.slug}
+                                        className="p-3 text-center"
+                                      >
                                         -
                                       </td>
                                     );
@@ -159,8 +176,8 @@ function AdminComponent() {
                                         isEmpty
                                           ? "bg-destructive/20 text-destructive font-semibold"
                                           : !isComplete
-                                          ? "bg-yellow-500/20 text-yellow-600 font-semibold"
-                                          : "text-muted-foreground"
+                                            ? "bg-yellow-500/20 text-yellow-600 font-semibold"
+                                            : "text-muted-foreground"
                                       }`}
                                       title={`${status.current} / ${status.required} picks${!isComplete ? " (Incomplete)" : ""}`}
                                     >
@@ -189,7 +206,7 @@ function AdminComponent() {
                     <p className="text-muted-foreground">No users found.</p>
                   )}
                 </TabsContent>
-                
+
                 <TabsContent value="results" className="mt-4">
                   <WinStatusConfig />
                 </TabsContent>
@@ -210,17 +227,24 @@ function AdminComponent() {
                             checked={settings?.contestClosed ?? false}
                             onCheckedChange={(checked) => {
                               if (typeof checked !== "boolean") return;
-                              
+
                               console.log("Checkbox changed to:", checked);
                               updateSettings.mutate(
                                 { contestClosed: checked },
                                 {
                                   onSuccess: () => {
-                                    console.log("Settings updated successfully");
+                                    console.log(
+                                      "Settings updated successfully"
+                                    );
                                   },
                                   onError: (error) => {
-                                    console.error("Failed to update settings:", error);
-                                    alert(`Failed to update settings: ${error.message}`);
+                                    console.error(
+                                      "Failed to update settings:",
+                                      error
+                                    );
+                                    alert(
+                                      `Failed to update settings: ${error.message}`
+                                    );
                                   },
                                 }
                               );
@@ -236,8 +260,8 @@ function AdminComponent() {
                         </div>
                         <p className="text-sm text-muted-foreground">
                           When the contest is closed, users can see the full
-                          leaderboard with all picks and points. When open, users
-                          can see the leaderboard but without bet details.
+                          leaderboard with all picks and points. When open,
+                          users can see the leaderboard but without bet details.
                         </p>
                       </div>
                     </CardContent>
@@ -251,4 +275,3 @@ function AdminComponent() {
     </div>
   );
 }
-

@@ -50,6 +50,11 @@ export function Multiselect({
           "border rounded-md p-2 overflow-y-auto bg-background",
           maxHeight
         )}
+        style={{
+          backgroundColor: "rgb(22, 24, 28)",
+          borderTopColor: "rgb(68, 68, 71)",
+          borderTopWidth: "1px",
+        }}
       >
         {options.length === 0 ? (
           <div className="text-sm text-muted-foreground p-2">{placeholder}</div>

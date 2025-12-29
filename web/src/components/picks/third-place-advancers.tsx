@@ -142,20 +142,27 @@ export function ThirdPlaceAdvancersComponent() {
             });
 
             return (
-              <Card key={groupLetter}>
+              <Card
+                key={groupLetter}
+                style={{
+                  backgroundColor: "rgb(22, 24, 28)",
+                  borderTopColor: "rgb(68, 68, 71)",
+                  borderTopWidth: "1px",
+                }}
+              >
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Group {groupLetter}</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Group {groupLetter}</CardTitle>
+                    <div className="text-xs text-muted-foreground text-right">
+                      <div>points:</div>
+                      <div>
+                        <span className="text-yellow-500">qualify</span>
+                      </div>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-end pb-1">
-                      <div className="text-xs text-muted-foreground text-right">
-                        <div>points:</div>
-                        <div>
-                          <span className="text-yellow-500">qualify</span>
-                        </div>
-                      </div>
-                    </div>
                     {sortedChoices.map((choice: Choice) => {
                       const isSelected = selectedChoiceId === choice.id;
                       const isGroupWinner = choice.title === groupWinner;

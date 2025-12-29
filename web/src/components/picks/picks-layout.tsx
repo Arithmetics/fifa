@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getStepBySlug, STEPS } from "@/lib/picks-steps";
+import { Edit } from "lucide-react";
 
 type PicksLayoutProps = {
   slug: string;
@@ -71,7 +72,7 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header with Title and Logout */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">🌍 🏆 ⚽</h1>
+            <h1 className="text-2xl font-bold">🌍 🏆 💵</h1>
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Link to="/admin">
@@ -89,9 +90,29 @@ export function PicksLayout({ slug, children }: PicksLayoutProps) {
           {/* Step Title */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">{currentStep.name}</CardTitle>
-              {currentStep.description && (
-                <CardDescription>{currentStep.description}</CardDescription>
+              {slug === "summary" ? (
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl">{currentStep.name}</CardTitle>
+                  <Button
+                    onClick={() => {
+                      const firstStep = STEPS.find((s) => s.slug !== "summary");
+                      if (firstStep) {
+                        navigate({ to: `/picks/${firstStep.slug}` as any });
+                      }
+                    }}
+                    variant="outline"
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Picks
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <CardTitle className="text-2xl">{currentStep.name}</CardTitle>
+                  {currentStep.description && (
+                    <CardDescription>{currentStep.description}</CardDescription>
+                  )}
+                </>
               )}
             </CardHeader>
             <CardContent className="space-y-6">{children}</CardContent>

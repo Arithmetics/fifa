@@ -79,6 +79,11 @@ export function BracketView({
                 <Card
                   key={matchup.id}
                   className={`p-2 ${pair.length === 1 ? "w-full max-w-md" : ""}`}
+                  style={{
+                    backgroundColor: "rgb(22, 24, 28)",
+                    borderTopColor: "rgb(68, 68, 71)",
+                    borderTopWidth: "1px",
+                  }}
                 >
                   <div className="space-y-1">
                     <div className="text-xs text-muted-foreground mb-1">

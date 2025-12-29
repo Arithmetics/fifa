@@ -400,7 +400,7 @@ function LeaderboardComponent() {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header with Title and Logout */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">🌍 World Cup 2026 ⚽</h1>
+            <h1 className="text-2xl font-bold">World Cup Cash 2026 🌍 🏆 💵</h1>
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Link to="/admin">
@@ -468,9 +468,7 @@ function LeaderboardComponent() {
 
                           return (
                             <Fragment key={entry.userId}>
-                              <tr
-                                className="border-b hover:bg-muted/50 transition-colors"
-                              >
+                              <tr className="border-b hover:bg-muted/50 transition-colors">
                                 <td className="p-3">
                                   <button
                                     onClick={toggleExpand}
@@ -673,9 +671,7 @@ function LeaderboardComponent() {
                                 </td>
                               </tr>
                               {isExpanded && (
-                                <tr
-                                  className="border-b bg-muted/30"
-                                >
+                                <tr className="border-b bg-muted/30">
                                   <td colSpan={7} className="p-4">
                                     <div className="space-y-4">
                                       {/* Round of 16 */}

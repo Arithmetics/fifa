@@ -61,7 +61,7 @@ function HomeComponent() {
         {/* Main Title */}
         <div className="space-y-4">
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-            🌍 World Cup 2026 ⚽
+            World Cup Cash 2026 🌍 🏆 💵
           </h1>
           <p className="text-xl text-muted-foreground">
             The best World Cup contest on the planet
